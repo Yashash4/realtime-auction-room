@@ -101,7 +101,8 @@ export function useAuctionRoom(initial: Initial): AuctionState {
         if (p.eventType === "DELETE") setItems((prev) => prev.filter((i) => i.id === (p.old as Item).id));
         else upsertItem(p.new as Item);
       })
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "bids", filter: `room_id=eq.${roomId}` }, (p) => {
+      .on("postgres_changes", { event: "*", schema: "public", table: "bids", filter: `room_id=eq.${roomId}` }, (p) => {
+        if (p.eventType !== "INSERT") return;
         setBids((prev) => (prev.some((b) => b.id === (p.new as Bid).id) ? prev : [...prev, p.new as Bid]));
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "room_participants", filter: `room_id=eq.${roomId}` }, (p) => {
@@ -122,6 +123,23 @@ export function useAuctionRoom(initial: Initial): AuctionState {
       void supabase.removeChannel(channel);
     };
   }, [supabase, roomId, refetch]);
+
+  // Resilience net: realtime is the fast path, but a dropped or delayed event
+  // must never leave a client permanently desynced. Re-sync on tab focus and on
+  // a slow poll so state always converges within a few seconds.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void refetch();
+    };
+    window.addEventListener("focus", onVisible);
+    document.addEventListener("visibilitychange", onVisible);
+    const poll = setInterval(onVisible, 4000); // ponytail: cheap backstop; realtime handles the instant case
+    return () => {
+      window.removeEventListener("focus", onVisible);
+      document.removeEventListener("visibilitychange", onVisible);
+      clearInterval(poll);
+    };
+  }, [refetch]);
 
   // Idempotent client-triggered resolution when the timer expires.
   useEffect(() => {
