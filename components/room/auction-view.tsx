@@ -1,0 +1,89 @@
+"use client";
+
+import type { Bid, Item, Participant, Room } from "@/lib/types";
+import { formatMoney } from "@/lib/format";
+import { PlayerCard } from "@/components/room/player-card";
+import { TimerRing } from "@/components/room/timer-ring";
+import { BidPanel } from "@/components/room/bid-panel";
+import { BidHistory } from "@/components/room/bid-history";
+import { TeamBudgets } from "@/components/room/team-budgets";
+import { AdminControls } from "@/components/room/admin-controls";
+
+export function AuctionView({
+  room,
+  currentItem,
+  itemBids,
+  participants,
+  isAdmin,
+  myParticipant,
+  nowMs,
+}: {
+  room: Room;
+  currentItem: Item | null;
+  itemBids: Bid[]; // newest first
+  participants: Participant[];
+  isAdmin: boolean;
+  myParticipant: Participant | null;
+  nowMs: number;
+}) {
+  const teamNameById = new Map(participants.map((p) => [p.id, p.team_name]));
+  const highest = itemBids[0] ?? null;
+
+  const paused = room.status === "paused";
+  const endMs = room.item_ends_at ? new Date(room.item_ends_at).getTime() : 0;
+  const msRemaining = paused
+    ? (room.paused_remaining_ms ?? 0)
+    : Math.max(0, endMs - nowMs);
+  const totalMs = room.timer_seconds * 1000;
+  const open = room.status === "active" && msRemaining > 0;
+
+  if (!currentItem) {
+    return <p className="py-20 text-center text-muted-foreground">Loading current player…</p>;
+  }
+
+  return (
+    <div className="mx-auto grid max-w-5xl gap-6 lg:grid-cols-[1fr_320px]">
+      <div className="space-y-6">
+        <div className="flex flex-col items-center gap-6 rounded-xl border bg-card p-8">
+          {paused && (
+            <span className="rounded-full bg-amber-500/15 px-3 py-1 text-xs font-medium text-amber-600 dark:text-amber-400">
+              Paused by admin
+            </span>
+          )}
+          <PlayerCard item={currentItem} currency={room.currency} />
+          <TimerRing msRemaining={msRemaining} totalMs={totalMs} paused={paused} />
+          <div className="text-center">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Current bid</p>
+            <p className="mt-1 text-3xl font-bold tabular-nums">
+              {formatMoney(room.currency, highest?.amount ?? currentItem.base_price)}
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {highest ? `Leading: ${teamNameById.get(highest.participant_id) ?? "Team"}` : "No bids yet"}
+            </p>
+          </div>
+        </div>
+
+        <BidPanel
+          room={room}
+          item={currentItem}
+          highest={highest}
+          myParticipant={myParticipant}
+          isAdmin={isAdmin}
+          open={open}
+        />
+
+        <BidHistory bids={itemBids} teamNameById={teamNameById} currency={room.currency} />
+      </div>
+
+      <div className="space-y-6">
+        {isAdmin && <AdminControls room={room} />}
+        <TeamBudgets
+          participants={participants}
+          currency={room.currency}
+          highlightId={highest?.participant_id}
+          myParticipantId={myParticipant?.id}
+        />
+      </div>
+    </div>
+  );
+}
