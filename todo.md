@@ -9,7 +9,7 @@ Ticked off as we go. See `plan.md` for full detail and `CLAUDE.md` for design.
 - [x] **5. Room page** — realtime subscriptions (`use-auction-room`), server-synced timer + idempotent auto-resolve, tiered bid panel, live history, budgets, admin controls, lobby/auction/completed views. Build passes.
 - [x] **6. Cron** — daily best-effort `/api/cron/resolve` (CRON_SECRET-guarded, service-role sweep) + vercel.json. Endpoint verified locally.
 - [x] **7. Seed** — `scripts/seed.mjs`: 1 admin + 3 team accounts, DEMO01 (live lobby) + DEMO02 (completed), both is_demo. ✅ run + verified on live DB.
-- [ ] **8. Docs** — README + .env.example + ai-transcripts/
+- [x] **8. Docs** — README (all 14 sections) + .env.example + ai-transcripts/ai-usage-summary.md. _Live URL pending deploy; add `/export` transcript._
 - [ ] **9. Deploy** — Vercel + Supabase, verify live end-to-end
 
 ## Parallel (sub-agents, where independent)
