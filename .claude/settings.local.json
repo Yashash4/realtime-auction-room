@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(export FILTER_BRANCH_SQUELCH_WARNING=1)",
+      "Bash(git filter-branch *)",
+      "Bash(git log *)",
+      "Bash(xargs -r -n1 git update-ref -d)",
+      "Bash(git reflog *)",
+      "Read(//c/Users/yasha/.supabase/**)",
+      "Bash(npx --yes supabase db push)",
+      "Bash(npx --yes supabase db query --linked -f supabase/tests/auction_selfcheck.sql)",
+      "Bash(npx --yes supabase db query --linked \"do \\\\$\\\\$ begin assert false, 'CONTROL: asserts do fail loudly'; end \\\\$\\\\$;\")",
+      "Bash(npm run *)"
+    ]
+  }
+}

@@ -4,8 +4,8 @@ Ticked off as we go. See `plan.md` for full detail and `CLAUDE.md` for design.
 
 - [x] **1. Scaffold** — Next.js + Tailwind + shadcn + Supabase clients + middleware + docs
 - [x] **2. Migrations** — tables + RLS + profile trigger; realtime replication (`supabase/migrations/0001,0002`)
-- [x] **3. Auction SQL functions** — tier-step, admin-can't-bid, idempotent resolve (`0003`) + rollback-safe self-check (`supabase/tests`) + TS data layer (`lib/types,auction,format`). _Live run on Supabase pending keys._
-- [ ] **4. Auth + dashboard** — login/register, create room (currency + tier editor), join, add players, Demo Rooms section
+- [x] **3. Auction SQL functions** — tier-step, admin-can't-bid, idempotent resolve (`0003`) + rollback-safe self-check (`supabase/tests`) + TS data layer (`lib/types,auction,format`). ✅ migrations pushed + self-check PASSED on live Supabase (`db query --linked`).
+- [x] **4. Auth + dashboard** — login/register (Supabase Auth), landing, create room (currency + tier editor + players), join by code, my rooms + Demo Rooms. Build passes.
 - [ ] **5. Room page** — realtime subscriptions, timer, tiered bid panel, history, budgets, admin run-controls, all 3 views
 - [ ] **6. Cron** — daily best-effort resolve endpoint + vercel.json
 - [ ] **7. Seed** — 1 admin + 3 team accounts, DEMO01 (live) + DEMO02 (completed), both is_demo
