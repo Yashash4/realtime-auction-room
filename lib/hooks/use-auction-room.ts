@@ -98,7 +98,7 @@ export function useAuctionRoom(initial: Initial): AuctionState {
         if (p.new && Object.keys(p.new).length) setRoom(p.new as Room);
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "items", filter: `room_id=eq.${roomId}` }, (p) => {
-        if (p.eventType === "DELETE") setItems((prev) => prev.filter((i) => i.id === (p.old as Item).id));
+        if (p.eventType === "DELETE") setItems((prev) => prev.filter((i) => i.id !== (p.old as Item).id));
         else upsertItem(p.new as Item);
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "bids", filter: `room_id=eq.${roomId}` }, (p) => {
@@ -107,7 +107,7 @@ export function useAuctionRoom(initial: Initial): AuctionState {
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "room_participants", filter: `room_id=eq.${roomId}` }, (p) => {
         if (p.eventType === "DELETE")
-          setParticipants((prev) => prev.filter((x) => x.id === (p.old as Participant).id));
+          setParticipants((prev) => prev.filter((x) => x.id !== (p.old as Participant).id));
         else upsertParticipant(p.new as Participant);
       })
       .subscribe((status) => {
