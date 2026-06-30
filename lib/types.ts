@@ -28,6 +28,7 @@ export type Room = {
   timer_seconds: number;
   anti_snipe_seconds: number;
   round: number;
+  share_token: string;
   is_demo: boolean;
   created_at: string;
 };

@@ -36,9 +36,12 @@ export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
   const isRoot = pathname === "/";
+  // Public read-only results share; open to anyone, and (unlike auth pages) a
+  // logged-in user is NOT bounced to the dashboard, so shared links just work.
+  const isShare = pathname.startsWith("/share");
 
   // Unauthenticated user hitting a protected route -> login.
-  if (!user && !isPublic && !isRoot) {
+  if (!user && !isPublic && !isRoot && !isShare) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Download, RotateCcw, Trophy } from "lucide-react";
+import { Download, RotateCcw, Share2, Trophy } from "lucide-react";
 import type { Item, Participant, Room } from "@/lib/types";
 import { formatMoney } from "@/lib/format";
 import { startUnsoldRound } from "@/lib/auction";
@@ -22,6 +22,14 @@ export function CompletedView({
   const teamById = new Map(participants.map((p) => [p.id, p]));
   const sold = items.filter((i) => i.status === "sold");
   const unsold = items.filter((i) => i.status === "unsold");
+
+  const shareResults = () => {
+    const url = `${window.location.origin}/share/${room.share_token}`;
+    navigator.clipboard.writeText(url).then(
+      () => toast.success("Public results link copied"),
+      () => toast.error("Couldn't copy the link"),
+    );
+  };
 
   const [reauctioning, setReauctioning] = useState(false);
   const reauction = async () => {
@@ -61,6 +69,10 @@ export function CompletedView({
           <Button variant="outline" render={<a href={`/api/rooms/${room.code}/results`} />}>
             <Download />
             Download CSV
+          </Button>
+          <Button variant="outline" onClick={shareResults}>
+            <Share2 />
+            Share results
           </Button>
           {isAdmin && unsold.length > 0 && (
             <Button disabled={reauctioning} onClick={reauction}>
