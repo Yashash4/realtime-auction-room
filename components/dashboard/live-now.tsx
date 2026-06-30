@@ -133,7 +133,7 @@ export function LiveNow({ initial }: { initial: LiveRoom[] }) {
                 </span>
                 <span className="flex shrink-0 items-center gap-1.5">
                   <Eye className="size-4" />
-                  {watching[r.id] ?? 0}
+                  {watching[r.id] ?? "–"}
                 </span>
               </div>
             </Link>

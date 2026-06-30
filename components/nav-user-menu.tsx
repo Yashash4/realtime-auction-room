@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { LogOut, User } from "lucide-react";
+import { useTransition } from "react";
+import { Loader2, LogOut, User } from "lucide-react";
 import { logout } from "@/app/(auth)/actions";
 import {
   DropdownMenu,
@@ -26,6 +27,7 @@ export function initialsOf(name: string): string {
 
 /** Top-right account control: a violet initials avatar that opens a small menu. */
 export function NavUserMenu({ displayName, email }: { displayName: string; email: string }) {
+  const [signingOut, startSignOut] = useTransition();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -43,8 +45,17 @@ export function NavUserMenu({ displayName, email }: { displayName: string; email
         <DropdownMenuItem render={<Link href="/profile" />}>
           <User /> View profile
         </DropdownMenuItem>
-        <DropdownMenuItem variant="destructive" onClick={() => void logout()}>
-          <LogOut /> Sign out
+        <DropdownMenuItem
+          variant="destructive"
+          disabled={signingOut}
+          closeOnClick={false}
+          onClick={() => {
+            if (signingOut) return;
+            startSignOut(() => logout());
+          }}
+        >
+          {signingOut ? <Loader2 className="animate-spin" /> : <LogOut />}
+          {signingOut ? "Signing out…" : "Sign out"}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

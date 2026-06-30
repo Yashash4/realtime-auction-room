@@ -4,6 +4,7 @@ import type { RoomStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { DeleteRoomButton } from "@/components/dashboard/delete-room-button";
+import { CopyCodeButton } from "@/components/dashboard/copy-code-button";
 
 type StatusMeta = { label: string; icon: LucideIcon; badge: string; dot?: boolean };
 
@@ -36,7 +37,10 @@ export function RoomCard({ room }: { room: RoomCardData }) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="truncate font-medium">{room.name}</h3>
-          <p className="mt-0.5 font-mono text-xs text-muted-foreground">{room.code}</p>
+          <p className="mt-0.5 flex items-center gap-1 font-mono text-xs text-muted-foreground">
+            {room.code}
+            <CopyCodeButton code={room.code} />
+          </p>
         </div>
         <Badge variant="secondary" className={cn("gap-1 font-semibold tracking-wide", meta.badge)}>
           {meta.dot ? (
@@ -61,6 +65,13 @@ export function RoomCard({ room }: { room: RoomCardData }) {
             <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
           </div>
         </div>
+      )}
+
+      {room.status === "completed" && room.itemCount > 0 && (
+        <p className="mt-4 flex items-center gap-1.5 text-xs text-muted-foreground">
+          <CheckCircle2 className="size-3.5 text-emerald-500" />
+          {room.soldCount} sold of {room.itemCount}
+        </p>
       )}
 
       <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
