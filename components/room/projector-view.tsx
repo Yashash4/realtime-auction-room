@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import confetti from "canvas-confetti";
-import { Crown, Eye, Megaphone, MegaphoneOff, Radio, Settings, Trophy, Users, Volume2, VolumeX } from "lucide-react";
+import { Crown, Eye, Megaphone, MegaphoneOff, Settings, Trophy, Users, Volume2, VolumeX } from "lucide-react";
 import { useAuctionRoom } from "@/lib/hooks/use-auction-room";
 import { useAuctioneer } from "@/lib/hooks/use-auctioneer";
 import { useMuted } from "@/lib/sound";
@@ -131,32 +131,34 @@ export function ProjectorView({
   const role = roleStyle(currentItem?.role ?? null);
 
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground">
+    <div className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
       <header className="flex items-center justify-between border-b px-6 py-3 xl:px-8 xl:py-4">
-        <div className="min-w-0">
-          <h1 className="truncate text-xl font-black tracking-tight leading-tight xl:text-3xl">{room.name}</h1>
-          <p className="font-mono text-xs tracking-widest text-muted-foreground xl:text-sm">
-            {room.code}
-            {room.round > 1 && <span className="ml-2 text-primary">· Round {room.round}</span>}
-          </p>
+        <div className="flex min-w-0 items-center gap-2.5">
+          {/* Connection demoted to a small dot — only animates on error. */}
+          <span
+            title={conn === "live" ? "Live" : conn === "error" ? "Reconnecting" : "Connecting"}
+            className={cn(
+              "size-2.5 shrink-0 rounded-full",
+              conn === "live"
+                ? "bg-emerald-400"
+                : conn === "error"
+                  ? "animate-pulse bg-destructive"
+                  : "bg-amber-400",
+            )}
+          />
+          <div className="min-w-0">
+            <h1 className="truncate text-xl font-black tracking-tight leading-tight xl:text-3xl">{room.name}</h1>
+            <p className="font-mono text-xs tracking-widest text-muted-foreground xl:text-sm">
+              {room.code}
+              {room.round > 1 && <span className="ml-2 text-primary">· Round {room.round}</span>}
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-3 xl:gap-4">
-          <span
-            className={cn(
-              "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium xl:text-base",
-              conn === "live"
-                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-                : conn === "error"
-                  ? "border-destructive/30 bg-destructive/10 text-destructive"
-                  : "border-amber-500/30 bg-amber-500/10 text-amber-400",
-            )}
-          >
-            <Radio className={cn("size-4", conn === "live" && "animate-pulse")} />
-            {conn === "live" ? "Live" : conn === "error" ? "Reconnecting" : "Connecting"}
-          </span>
           <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-sm font-semibold text-primary xl:text-base">
             <Eye className="size-4" />
-            <span className="tabular-nums">{watching}</span> watching
+            {/* Hide stale count while reconnecting — a frozen number reads as live. */}
+            <span className="tabular-nums">{conn === "live" ? watching : "—"}</span> watching
           </span>
 
           <SettingsPanel
@@ -168,9 +170,9 @@ export function ProjectorView({
         </div>
       </header>
 
-      <main className="grid flex-1 lg:grid-cols-[1fr_26rem] xl:grid-cols-[1fr_30rem]">
-        {/* Stage */}
-        <section className="relative flex flex-col items-center justify-center gap-4 px-8 py-6 xl:gap-8 xl:px-10 xl:py-10">
+      <main className="grid min-h-0 flex-1 lg:grid-cols-[1fr_26rem] xl:grid-cols-[1fr_30rem]">
+        {/* Stage — fills exactly one viewport row; nothing scrolls. */}
+        <section className="relative flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-8 py-4 xl:gap-5 xl:px-10 xl:py-6">
           {room.status === "lobby" ? (
             <LobbyWait room={room} participants={participants} itemCount={items.length} />
           ) : room.status === "completed" ? (
@@ -183,60 +185,63 @@ export function ProjectorView({
             />
           ) : currentItem ? (
             <>
-              {paused && (
-                <span className="rounded-full bg-amber-500/15 px-4 py-1.5 text-base font-medium text-amber-400 xl:text-lg">Paused</span>
-              )}
-
-              <span className="rounded-full border border-border bg-card px-4 py-1 text-sm font-semibold uppercase tracking-[0.25em] text-muted-foreground xl:text-base">
+              <span className="flex items-center gap-3 rounded-full border border-border bg-card px-4 py-1 text-sm font-semibold uppercase tracking-[0.25em] text-muted-foreground xl:text-base">
                 Player <span className="text-foreground tabular-nums">{itemPos}</span> / {items.length}
+                {paused && <span className="text-amber-400">· Paused</span>}
               </span>
 
-              <div
-                className={cn(
-                  "flex size-60 items-center justify-center rounded-full bg-gradient-to-br text-7xl font-black text-foreground ring-2 xl:size-72 xl:text-8xl",
-                  role.ring,
-                  role.glow,
-                )}
-              >
-                {initials(currentItem.name)}
-              </div>
-              <div className="text-center">
-                <h2 className="text-5xl font-black tracking-tight xl:text-7xl">{currentItem.name}</h2>
-                <p className="mt-3 flex flex-wrap items-center justify-center gap-2 text-lg text-muted-foreground xl:text-2xl">
-                  {currentItem.role && (
-                    <span className={cn("rounded-full px-3 py-0.5 text-sm font-semibold uppercase tracking-wide xl:text-base", role.chip)}>
-                      {currentItem.role}
-                    </span>
+              {/* Player identity: avatar + name + meta, capped so it never dominates the column. */}
+              <div className="flex min-h-0 flex-col items-center gap-2 xl:gap-3">
+                <div
+                  className={cn(
+                    "flex aspect-square h-[20vh] max-h-44 items-center justify-center rounded-full bg-gradient-to-br text-6xl font-black text-foreground ring-2 xl:max-h-56 xl:text-7xl",
+                    role.ring,
+                    role.glow,
                   )}
-                  {[currentItem.country, `Base ${formatAmount(currentItem.base_price, room.currency)}`]
-                    .filter(Boolean)
-                    .join("  ·  ")}
-                </p>
-              </div>
-
-              <TimerRing
-                msRemaining={msRemaining}
-                totalMs={room.timer_seconds * 1000}
-                paused={paused}
-                className="size-56 xl:size-72"
-                numberClassName="text-6xl xl:text-8xl"
-              />
-
-              <div className="text-center">
-                <p className="text-base uppercase tracking-[0.3em] text-muted-foreground xl:text-xl">Current bid</p>
-                <p
-                  key={highest?.amount ?? currentItem.base_price}
-                  className="mt-2 text-6xl font-black tracking-tight tabular-nums text-foreground animate-bid-flash xl:text-8xl"
                 >
-                  {formatAmount(highest?.amount ?? currentItem.base_price, room.currency)}
-                </p>
-                <p className="mt-2 text-2xl xl:mt-3 xl:text-3xl">
-                  {highest ? (
-                    <span className="font-bold text-primary">{teamNameById.get(highest.participant_id) ?? "Team"}</span>
-                  ) : (
-                    <span className="text-muted-foreground">No bids yet</span>
-                  )}
-                </p>
+                  {initials(currentItem.name)}
+                </div>
+                <div className="text-center">
+                  <h2 className="text-4xl font-black tracking-tight xl:text-6xl">{currentItem.name}</h2>
+                  <p className="mt-1.5 flex flex-wrap items-center justify-center gap-2 text-base text-muted-foreground xl:text-xl">
+                    {currentItem.role && (
+                      <span className={cn("rounded-full px-3 py-0.5 text-sm font-semibold uppercase tracking-wide xl:text-base", role.chip)}>
+                        {currentItem.role}
+                      </span>
+                    )}
+                    {[currentItem.country, `Base ${formatAmount(currentItem.base_price, room.currency)}`]
+                      .filter(Boolean)
+                      .join("  ·  ")}
+                  </p>
+                </div>
+              </div>
+
+              {/* Focal row: timer ring beside the current bid so both fit without stacking tall. */}
+              <div className="flex flex-wrap items-center justify-center gap-6 xl:gap-12">
+                <TimerRing
+                  msRemaining={msRemaining}
+                  totalMs={room.timer_seconds * 1000}
+                  paused={paused}
+                  className="h-[22vh] max-h-48 w-auto aspect-square xl:max-h-64"
+                  numberClassName="text-5xl xl:text-7xl"
+                />
+
+                <div className="text-center">
+                  <p className="text-base uppercase tracking-[0.3em] text-muted-foreground xl:text-xl">Current bid</p>
+                  <p
+                    key={highest?.amount ?? currentItem.base_price}
+                    className="mt-1 text-6xl font-black tracking-tight tabular-nums text-foreground animate-bid-flash xl:text-8xl"
+                  >
+                    {formatAmount(highest?.amount ?? currentItem.base_price, room.currency)}
+                  </p>
+                  <p className="mt-1.5 text-2xl xl:text-3xl">
+                    {highest ? (
+                      <span className="font-bold text-primary">{teamNameById.get(highest.participant_id) ?? "Team"}</span>
+                    ) : (
+                      <span className="text-muted-foreground">No bids yet</span>
+                    )}
+                  </p>
+                </div>
               </div>
             </>
           ) : (
