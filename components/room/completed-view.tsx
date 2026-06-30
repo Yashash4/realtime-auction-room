@@ -9,6 +9,7 @@ import { startUnsoldRound } from "@/lib/auction";
 import { buildResultsReport, type Award } from "@/lib/squad-report";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { SquadList } from "@/components/room/squad-list";
 
 const AWARD_ICON: Record<Award["icon"], LucideIcon> = {
   spender: Banknote,
@@ -81,6 +82,15 @@ export function CompletedView({
   // Derived (no API): one-line summary, awards board, per-team recaps.
   const report = buildResultsReport(room, items, participants);
   const recapByTeam = new Map(report.reports.map((r) => [r.teamId, r.text]));
+
+  const squadData = squads.map(({ team, players, spent }) => ({
+    name: team.team_name,
+    players: players.map((pl) => ({ name: pl.name, price: pl.sold_price })),
+    spent,
+    budgetLeft: team.budget_remaining,
+    standout: team.id === standoutId,
+    recap: recapByTeam.get(team.id) ?? "",
+  }));
 
   return (
     <div className="mx-auto max-w-4xl space-y-8">
@@ -159,14 +169,20 @@ export function CompletedView({
         </section>
       )}
 
+      {/* Squads above the results, stacked + collapsible (the standout opens). */}
+      <section className="space-y-3">
+        <h3 className="font-medium">Squads</h3>
+        <SquadList squads={squadData} currency={room.currency} />
+      </section>
+
+      {/* Results scroll INSIDE this box (sticky header) so a 100-player list
+          doesn't make the whole page scroll. */}
       <section className="space-y-3">
         <h3 className="font-medium">Results</h3>
-        {sold.length === 0 && (
-          <p className="text-sm text-muted-foreground">No players were sold.</p>
-        )}
-        <div className="overflow-hidden rounded-xl border shadow-lg">
+        {sold.length === 0 && <p className="text-sm text-muted-foreground">No players were sold.</p>}
+        <div className="max-h-[28rem] overflow-y-auto rounded-xl border shadow-lg">
           <table className="w-full text-sm">
-            <thead className="bg-muted/50 text-left text-muted-foreground">
+            <thead className="sticky top-0 z-10 bg-muted text-left text-muted-foreground">
               <tr>
                 <th className="px-4 py-2.5 font-medium">Player</th>
                 <th className="px-4 py-2.5 font-medium">Won by</th>
@@ -194,55 +210,6 @@ export function CompletedView({
               })}
             </tbody>
           </table>
-        </div>
-      </section>
-
-      <section className="space-y-3">
-        <h3 className="font-medium">Squads</h3>
-        {participants.length === 0 && (
-          <p className="text-sm text-muted-foreground">No teams joined.</p>
-        )}
-        <div className="grid gap-4 sm:grid-cols-2">
-          {squads.map(({ team, players, spent }) => {
-            const isStandout = team.id === standoutId;
-            return (
-              <div
-                key={team.id}
-                className={cn(
-                  "rounded-xl border bg-card p-4 shadow-lg",
-                  isStandout && "ring-2 ring-primary/40",
-                )}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5 font-medium">
-                    {isStandout && <Crown className="size-4 text-primary" />}
-                    {team.team_name}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {players.length} {players.length === 1 ? "player" : "players"}
-                  </span>
-                </div>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Spent {formatAmount(spent, room.currency)} · {formatAmount(team.budget_remaining, room.currency)} left
-                </p>
-                {players.length > 0 && (
-                  <ul className="mt-3 space-y-1 text-sm">
-                    {players.map((pl) => (
-                      <li key={pl.id} className="flex justify-between">
-                        <span>{pl.name}</span>
-                        <span className="tabular-nums text-muted-foreground">
-                          {formatAmount(pl.sold_price, room.currency)}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                <p className="mt-3 border-l-2 border-primary/40 pl-3 italic text-muted-foreground">
-                  {recapByTeam.get(team.id)}
-                </p>
-              </div>
-            );
-          })}
         </div>
       </section>
     </div>

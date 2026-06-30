@@ -5,6 +5,7 @@ import { formatAmount } from "@/lib/format";
 import { buildResultsReport, type Award } from "@/lib/squad-report";
 import type { Item, Participant, Room } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { SquadList } from "@/components/room/squad-list";
 
 const AWARD_ICON: Record<Award["icon"], LucideIcon> = {
   spender: Banknote,
@@ -132,6 +133,15 @@ function Results({ data }: { data: ShareResults }) {
     participants,
   );
   const recapByTeam = new Map(report.reports.map((r) => [r.teamName, r.text]));
+  const standoutName = teams.length ? teams.reduce((b, t) => (t.spent > b.spent ? t : b), teams[0]).team_name : null;
+  const squadData = teams.map((t) => ({
+    name: t.team_name,
+    players: t.players.map((pl) => ({ name: pl.name, price: pl.price })),
+    spent: t.spent,
+    budgetLeft: t.budget_remaining,
+    standout: t.team_name === standoutName,
+    recap: recapByTeam.get(t.team_name) ?? "",
+  }));
 
   const totalSpent = players.reduce((s, p) => s + (p.status === "sold" ? (p.price ?? 0) : 0), 0);
   const highestSale = players.reduce((m, p) => Math.max(m, p.status === "sold" ? (p.price ?? 0) : 0), 0);
@@ -198,11 +208,18 @@ function Results({ data }: { data: ShareResults }) {
         </section>
       )}
 
+      {/* Squads above the results, stacked + collapsible (standout opens). */}
+      <section className="space-y-3">
+        <h3 className="font-medium">Squads</h3>
+        <SquadList squads={squadData} currency={room.currency} />
+      </section>
+
+      {/* Results scroll inside this box so a long player list doesn't scroll the page. */}
       <section className="space-y-3">
         <h3 className="font-medium">Results</h3>
-        <div className="overflow-hidden rounded-xl border">
+        <div className="max-h-[28rem] overflow-y-auto rounded-xl border">
           <table className="w-full text-sm">
-            <thead className="bg-muted/50 text-left text-muted-foreground">
+            <thead className="sticky top-0 z-10 bg-muted text-left text-muted-foreground">
               <tr>
                 <th className="px-4 py-2.5 font-medium">Player</th>
                 <th className="px-4 py-2.5 font-medium">Won by</th>
@@ -228,40 +245,6 @@ function Results({ data }: { data: ShareResults }) {
               ))}
             </tbody>
           </table>
-        </div>
-      </section>
-
-      <section className="space-y-3">
-        <h3 className="font-medium">Squads</h3>
-        <div className="grid gap-4 sm:grid-cols-2">
-          {teams.map((t, i) => (
-            <div key={i} className="rounded-xl border bg-card p-4">
-              <div className="flex items-center justify-between">
-                <span className="font-medium">{t.team_name}</span>
-                <span className="text-xs text-muted-foreground">
-                  {t.player_count} {t.player_count === 1 ? "player" : "players"}
-                </span>
-              </div>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Spent {formatAmount(t.spent, room.currency)} · {formatAmount(t.budget_remaining, room.currency)} left
-              </p>
-              {t.players.length > 0 && (
-                <ul className="mt-3 space-y-1 text-sm">
-                  {t.players.map((pl, j) => (
-                    <li key={j} className="flex justify-between">
-                      <span>{pl.name}</span>
-                      <span className="tabular-nums text-muted-foreground">
-                        {formatAmount(pl.price, room.currency)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              <p className="mt-3 border-l-2 border-primary/40 pl-3 italic text-muted-foreground">
-                {recapByTeam.get(t.team_name)}
-              </p>
-            </div>
-          ))}
         </div>
       </section>
     </main>
