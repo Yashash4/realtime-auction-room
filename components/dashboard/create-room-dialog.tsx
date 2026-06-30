@@ -75,6 +75,14 @@ export function CreateRoomDialog() {
             </div>
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="antiSnipeSeconds">Anti-snipe extension (s)</Label>
+            <Input id="antiSnipeSeconds" name="antiSnipeSeconds" type="number" min={5} max={120} defaultValue={20} required />
+            <p className="text-xs text-muted-foreground">
+              A bid in the final seconds bumps the clock back up to this many seconds.
+            </p>
+          </div>
+
           <TiersEditor />
 
           <div className="space-y-2">

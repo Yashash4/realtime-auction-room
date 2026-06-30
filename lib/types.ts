@@ -26,6 +26,7 @@ export type Room = {
   currency: string;
   increment_tiers: IncrementTier[];
   timer_seconds: number;
+  anti_snipe_seconds: number;
   is_demo: boolean;
   created_at: string;
 };

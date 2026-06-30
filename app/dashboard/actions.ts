@@ -17,6 +17,7 @@ const formSchema = z.object({
   currency: z.string().trim().min(1).max(3),
   teamBudget: z.coerce.number().int().positive("Budget must be positive"),
   timerSeconds: z.coerce.number().int().min(10).max(300),
+  antiSnipeSeconds: z.coerce.number().int().min(5).max(120),
   tiers: tierSchema,
   players: z
     .array(
@@ -70,6 +71,7 @@ export async function createRoom(
     currency: formData.get("currency"),
     teamBudget: formData.get("teamBudget"),
     timerSeconds: formData.get("timerSeconds"),
+    antiSnipeSeconds: formData.get("antiSnipeSeconds"),
     tiers,
     players: parsePlayers(String(formData.get("players") ?? "")),
   });
@@ -92,6 +94,7 @@ export async function createRoom(
         team_budget: data.teamBudget,
         currency: data.currency,
         timer_seconds: data.timerSeconds,
+        anti_snipe_seconds: data.antiSnipeSeconds,
         increment_tiers: sortedTiers,
       })
       .select("id")
