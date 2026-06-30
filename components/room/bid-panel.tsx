@@ -17,6 +17,7 @@ export function BidPanel({
   myParticipant,
   isAdmin,
   open,
+  myOwned = 0,
 }: {
   room: Room;
   item: Item;
@@ -24,6 +25,7 @@ export function BidPanel({
   myParticipant: Participant | null;
   isAdmin: boolean;
   open: boolean; // is bidding currently open (active + time left)
+  myOwned?: number; // SOLD players this team already owns (for the squad cap)
 }) {
   const [pending, setPending] = useState(false);
   const [custom, setCustom] = useState("");
@@ -56,6 +58,8 @@ export function BidPanel({
 
   const iAmHighest = highest?.participant_id === myParticipant.id;
   const budget = myParticipant.budget_remaining;
+  const cap = room.max_players_per_team ?? 0;
+  const squadFull = cap > 0 && myOwned >= cap;
 
   async function submit(amount: number) {
     if (amount > budget) {
@@ -73,7 +77,7 @@ export function BidPanel({
     }
   }
 
-  const quickDisabled = !open || pending || iAmHighest || quickBid > budget;
+  const quickDisabled = !open || pending || iAmHighest || quickBid > budget || squadFull;
 
   return (
     <Panel>
@@ -82,13 +86,30 @@ export function BidPanel({
         <span className="font-medium tabular-nums">{formatAmount(budget, room.currency)}</span>
       </div>
 
+      {cap > 0 && (
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-muted-foreground">Your squad</span>
+          <span className={`font-medium tabular-nums ${squadFull ? "text-amber-500" : ""}`}>
+            {myOwned} / {cap} players
+          </span>
+        </div>
+      )}
+
+      {squadFull && (
+        <p className="rounded-md bg-amber-500/10 px-3 py-2 text-center text-sm font-medium text-amber-600 dark:text-amber-400">
+          Your squad is full ({cap} {cap === 1 ? "player" : "players"}) — you can&apos;t bid on more.
+        </p>
+      )}
+
       <Button size="lg" className="h-14 w-full text-base" disabled={quickDisabled} onClick={() => submit(quickBid)}>
         <Gavel className="size-5" />
-        {iAmHighest
-          ? "You're the highest bidder"
-          : isOpening
-            ? `Open at ${formatAmount(quickBid, room.currency)}`
-            : `Bid ${formatAmount(quickBid, room.currency)}`}
+        {squadFull
+          ? "Squad full"
+          : iAmHighest
+            ? "You're the highest bidder"
+            : isOpening
+              ? `Open at ${formatAmount(quickBid, room.currency)}`
+              : `Bid ${formatAmount(quickBid, room.currency)}`}
       </Button>
 
       {!isOpening && (
@@ -104,11 +125,11 @@ export function BidPanel({
           placeholder={`Custom ≥ ${quickBid}`}
           value={custom}
           onChange={(e) => setCustom(e.target.value)}
-          disabled={!open || pending || iAmHighest}
+          disabled={!open || pending || iAmHighest || squadFull}
         />
         <Button
           variant="outline"
-          disabled={!open || pending || iAmHighest || !custom}
+          disabled={!open || pending || iAmHighest || squadFull || !custom}
           onClick={() => {
             const amt = parseInt(custom, 10);
             if (!Number.isFinite(amt) || amt < quickBid) {

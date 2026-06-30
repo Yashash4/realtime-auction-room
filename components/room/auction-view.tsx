@@ -22,6 +22,7 @@ export function AuctionView({
   participants,
   isAdmin,
   myParticipant,
+  soldByTeam,
   nowMs,
 }: {
   room: Room;
@@ -30,6 +31,7 @@ export function AuctionView({
   participants: Participant[];
   isAdmin: boolean;
   myParticipant: Participant | null;
+  soldByTeam: Map<string, number>;
   nowMs: number;
 }) {
   const teamNameById = new Map(participants.map((p) => [p.id, p.team_name]));
@@ -151,6 +153,7 @@ export function AuctionView({
           myParticipant={myParticipant}
           isAdmin={isAdmin}
           open={open}
+          myOwned={myParticipant ? (soldByTeam.get(myParticipant.id) ?? 0) : 0}
         />
 
         <BidHistory bids={itemBids} teamNameById={teamNameById} currency={room.currency} />
@@ -163,6 +166,8 @@ export function AuctionView({
           currency={room.currency}
           highlightId={highest?.participant_id}
           myParticipantId={myParticipant?.id}
+          soldByTeam={soldByTeam}
+          maxPerTeam={room.max_players_per_team}
         />
         <CommentaryFeed />
       </div>

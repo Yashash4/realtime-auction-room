@@ -32,6 +32,7 @@ export function LiveNow({ initial }: { initial: LiveRoom[] }) {
       .from("rooms")
       .select("id, code, name, admin_id, currentItem:items!rooms_current_item_fk(name)")
       .in("status", ["active", "paused"])
+      .eq("is_public", true)
       .order("created_at", { ascending: false });
     if (!data) return;
     const rows = data as unknown as RoomRow[];

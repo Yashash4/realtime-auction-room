@@ -18,6 +18,12 @@ const formSchema = z.object({
   teamBudget: z.coerce.number().int().positive("Budget must be positive"),
   timerSeconds: z.coerce.number().int().min(10).max(300),
   antiSnipeSeconds: z.coerce.number().int().min(5).max(120),
+  isPublic: z.preprocess((v) => v !== "false", z.boolean()), // select "true"/"false"; default public
+  // Blank input -> no cap (null). Any value must be a positive integer.
+  maxPlayersPerTeam: z.preprocess(
+    (v) => (v === "" || v == null ? null : v),
+    z.coerce.number().int().positive("Max players must be positive").nullable(),
+  ),
   tiers: tierSchema,
   players: z
     .array(
@@ -72,6 +78,8 @@ export async function createRoom(
     teamBudget: formData.get("teamBudget"),
     timerSeconds: formData.get("timerSeconds"),
     antiSnipeSeconds: formData.get("antiSnipeSeconds"),
+    isPublic: formData.get("isPublic"),
+    maxPlayersPerTeam: formData.get("maxPlayersPerTeam"),
     tiers,
     players: parsePlayers(String(formData.get("players") ?? "")),
   });
@@ -95,6 +103,8 @@ export async function createRoom(
         currency: data.currency,
         timer_seconds: data.timerSeconds,
         anti_snipe_seconds: data.antiSnipeSeconds,
+        is_public: data.isPublic,
+        max_players_per_team: data.maxPlayersPerTeam,
         increment_tiers: sortedTiers,
       })
       .select("id")

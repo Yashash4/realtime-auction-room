@@ -29,6 +29,8 @@ export type Room = {
   anti_snipe_seconds: number;
   round: number;
   share_token: string;
+  is_public: boolean;
+  max_players_per_team: number | null;
   is_demo: boolean;
   created_at: string;
 };

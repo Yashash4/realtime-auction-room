@@ -35,6 +35,12 @@ export function AuctionRoom({
         .sort((a, b) => b.amount - a.amount || b.created_at.localeCompare(a.created_at))
     : [];
 
+  // SOLD players won per team — drives the squad-cap display + bid lockout.
+  const soldByTeam = new Map<string, number>();
+  for (const it of items) {
+    if (it.status === "sold" && it.sold_to) soldByTeam.set(it.sold_to, (soldByTeam.get(it.sold_to) ?? 0) + 1);
+  }
+
   // Detect a player resolving (sold/unsold) and fire the celebratory overlay.
   // Pre-existing resolved items (e.g. reopening a finished room) are not celebrated.
   const celebrated = useRef<Set<string> | null>(null);
@@ -170,6 +176,7 @@ export function AuctionRoom({
             participants={participants}
             isAdmin={isAdmin}
             myParticipant={myParticipant}
+            soldByTeam={soldByTeam}
             nowMs={nowMs}
           />
         )}

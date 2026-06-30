@@ -92,6 +92,21 @@ export function CreateRoomDialog() {
             </p>
           </div>
 
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="visibility">Visibility</Label>
+              <select id="visibility" name="isPublic" defaultValue="true" className={inputClass}>
+                <option value="true">Public — anyone can watch</option>
+                <option value="false">Private — members only</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="maxPlayers">Max players / team</Label>
+              <Input id="maxPlayers" name="maxPlayersPerTeam" type="number" min={1} placeholder="No cap" />
+              <p className="text-[11px] text-muted-foreground">Blank = no limit.</p>
+            </div>
+          </div>
+
           <TiersEditor />
 
           <div className="space-y-2">

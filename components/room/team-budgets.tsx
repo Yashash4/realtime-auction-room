@@ -8,13 +8,18 @@ export function TeamBudgets({
   currency,
   highlightId,
   myParticipantId,
+  soldByTeam,
+  maxPerTeam,
 }: {
   participants: Participant[];
   currency: string;
   highlightId?: string | null; // current highest bidder's participant id
   myParticipantId?: string | null;
+  soldByTeam?: Map<string, number>;
+  maxPerTeam?: number | null;
 }) {
   const sorted = [...participants].sort((a, b) => b.budget_remaining - a.budget_remaining);
+  const cap = maxPerTeam ?? 0;
 
   return (
     <div className="rounded-xl border bg-card">
@@ -36,8 +41,19 @@ export function TeamBudgets({
                   </span>
                 )}
               </span>
-              <span className="tabular-nums text-muted-foreground">
-                {formatAmount(p.budget_remaining, currency)}
+              <span className="flex flex-col items-end">
+                <span className="tabular-nums text-muted-foreground">
+                  {formatAmount(p.budget_remaining, currency)}
+                </span>
+                {cap > 0 && (
+                  <span
+                    className={`text-[10px] tabular-nums ${
+                      (soldByTeam?.get(p.id) ?? 0) >= cap ? "text-amber-500" : "text-muted-foreground"
+                    }`}
+                  >
+                    {soldByTeam?.get(p.id) ?? 0} / {cap} players
+                  </span>
+                )}
               </span>
             </li>
           ))}
