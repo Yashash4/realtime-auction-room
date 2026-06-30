@@ -27,6 +27,7 @@ export type Room = {
   increment_tiers: IncrementTier[];
   timer_seconds: number;
   anti_snipe_seconds: number;
+  round: number;
   is_demo: boolean;
   created_at: string;
 };
@@ -69,7 +70,8 @@ export type AuctionEventType =
   | "bid_placed"
   | "timer_extended"
   | "sold"
-  | "unsold";
+  | "unsold"
+  | "round_started";
 
 /** Append-only log row (see supabase/migrations/0007). For replay + analytics. */
 export type AuctionEvent = {

@@ -75,3 +75,10 @@ export async function endAuction(roomId: string): Promise<Room> {
   if (error) throw new Error(error.message);
   return data as Room;
 }
+
+/** Reopen the unsold players as a new round at reduced base prices (admin only). */
+export async function startUnsoldRound(roomId: string): Promise<Room> {
+  const { data, error } = await rpc().rpc("start_unsold_round", { p_room: roomId });
+  if (error) throw new Error(error.message);
+  return data as Room;
+}
