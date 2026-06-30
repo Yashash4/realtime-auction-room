@@ -2,7 +2,7 @@
 
 import { Flag, Tag } from "lucide-react";
 import type { Item } from "@/lib/types";
-import { formatMoney } from "@/lib/format";
+import { formatAmount } from "@/lib/format";
 
 function initials(name: string) {
   return name
@@ -31,7 +31,7 @@ export function PlayerCard({ item, currency }: { item: Item; currency: string })
           )}
           <span className="flex items-center gap-1">
             <Tag className="size-3.5" />
-            Base {formatMoney(currency, item.base_price)}
+            Base {formatAmount(item.base_price, currency)}
           </span>
         </div>
       </div>

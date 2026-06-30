@@ -9,7 +9,7 @@ import type { Item, Participant, Room } from "./types";
 // Explicit .ts on the runtime imports so the sibling self-check runs under
 // `node --experimental-strip-types` (Next/tsc resolve these fine either way).
 import { moneyWords } from "./inr-words.ts";
-import { formatMoney } from "./format.ts";
+import { formatAmount } from "./format.ts";
 
 export type Award = {
   icon: "spender" | "players" | "priciest" | "value" | "budget";
@@ -98,7 +98,7 @@ export function buildResultsReport(
   participants: Participant[],
 ): ResultsReport {
   const words = (n: number) => moneyWords(room.currency, n);
-  const money = (n: number) => formatMoney(room.currency, n);
+  const money = (n: number) => formatAmount(n, room.currency);
 
   const sold = items.filter((i) => i.status === "sold" && i.sold_price != null);
   const unsold = items.filter((i) => i.status === "unsold");

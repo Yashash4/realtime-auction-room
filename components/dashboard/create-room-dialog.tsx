@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import { createRoom, type CreateRoomState } from "@/app/dashboard/actions";
 import { SAMPLE_PLAYERS_TEXT } from "@/lib/players";
+import { formatAmount } from "@/lib/format";
 import { CsvImportDialog } from "@/components/csv-import-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,6 +37,8 @@ function SubmitButton() {
 export function CreateRoomDialog() {
   const [open, setOpen] = useState(false);
   const [playersText, setPlayersText] = useState(SAMPLE_PLAYERS_TEXT);
+  const [currency, setCurrency] = useState("₹");
+  const [budget, setBudget] = useState("100000000");
   const [state, formAction] = useActionState<CreateRoomState, FormData>(createRoom, {});
 
   return (
@@ -61,7 +64,7 @@ export function CreateRoomDialog() {
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-2">
               <Label htmlFor="currency">Currency</Label>
-              <select id="currency" name="currency" defaultValue="₹" className={inputClass}>
+              <select id="currency" name="currency" value={currency} onChange={(e) => setCurrency(e.target.value)} className={inputClass}>
                 <option value="₹">₹</option>
                 <option value="$">$</option>
                 <option value="€">€</option>
@@ -70,7 +73,10 @@ export function CreateRoomDialog() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="teamBudget">Team budget</Label>
-              <Input id="teamBudget" name="teamBudget" type="number" min={1} defaultValue={100000000} required />
+              <Input id="teamBudget" name="teamBudget" type="number" min={1} value={budget} onChange={(e) => setBudget(e.target.value)} required />
+              {Number(budget) > 0 && (
+                <p className="text-[11px] text-muted-foreground">= {formatAmount(Number(budget), currency)}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="timerSeconds">Timer (s)</Label>

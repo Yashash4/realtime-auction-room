@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Gavel, SearchX, Trophy } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { formatMoney } from "@/lib/format";
+import { formatAmount } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
@@ -136,7 +136,7 @@ function Results({ data }: { data: ShareResults }) {
                   <td className="px-4 py-2.5 text-muted-foreground">{p.won_by ?? "—"}</td>
                   <td className="px-4 py-2.5 text-right tabular-nums">
                     {p.status === "sold" ? (
-                      formatMoney(room.currency, p.price)
+                      formatAmount(p.price, room.currency)
                     ) : (
                       <span className="text-muted-foreground">unsold</span>
                     )}
@@ -160,7 +160,7 @@ function Results({ data }: { data: ShareResults }) {
                 </span>
               </div>
               <p className="mt-1 text-sm text-muted-foreground">
-                Spent {formatMoney(room.currency, t.spent)} · {formatMoney(room.currency, t.budget_remaining)} left
+                Spent {formatAmount(t.spent, room.currency)} · {formatAmount(t.budget_remaining, room.currency)} left
               </p>
               {t.players.length > 0 && (
                 <ul className="mt-3 space-y-1 text-sm">
@@ -168,7 +168,7 @@ function Results({ data }: { data: ShareResults }) {
                     <li key={j} className="flex justify-between">
                       <span>{pl.name}</span>
                       <span className="tabular-nums text-muted-foreground">
-                        {formatMoney(room.currency, pl.price)}
+                        {formatAmount(pl.price, room.currency)}
                       </span>
                     </li>
                   ))}

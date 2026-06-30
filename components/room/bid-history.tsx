@@ -2,7 +2,7 @@
 
 import { Crown } from "lucide-react";
 import type { Bid } from "@/lib/types";
-import { formatMoney } from "@/lib/format";
+import { formatAmount } from "@/lib/format";
 
 export function BidHistory({
   bids,
@@ -31,7 +31,7 @@ export function BidHistory({
                 </span>
               </span>
               <span className={`tabular-nums ${i === 0 ? "font-semibold" : "text-muted-foreground"}`}>
-                {formatMoney(currency, b.amount)}
+                {formatAmount(b.amount, currency)}
               </span>
             </li>
           ))}

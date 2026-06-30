@@ -4,7 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Banknote, Crown, Download, PiggyBank, RotateCcw, Share2, Tag, Trophy, Users, type LucideIcon } from "lucide-react";
 import type { Item, Participant, Room } from "@/lib/types";
-import { formatMoney } from "@/lib/format";
+import { formatAmount } from "@/lib/format";
 import { startUnsoldRound } from "@/lib/auction";
 import { buildResultsReport, type Award } from "@/lib/squad-report";
 import { Button } from "@/components/ui/button";
@@ -137,7 +137,7 @@ export function CompletedView({
                   </td>
                   <td className="px-4 py-2.5 text-right tabular-nums">
                     {it.status === "sold" ? (
-                      formatMoney(room.currency, it.sold_price)
+                      formatAmount(it.sold_price, room.currency)
                     ) : (
                       <span className="text-muted-foreground">unsold</span>
                     )}
@@ -161,7 +161,7 @@ export function CompletedView({
                 </span>
               </div>
               <p className="mt-1 text-sm text-muted-foreground">
-                Spent {formatMoney(room.currency, spent)} · {formatMoney(room.currency, team.budget_remaining)} left
+                Spent {formatAmount(spent, room.currency)} · {formatAmount(team.budget_remaining, room.currency)} left
               </p>
               {players.length > 0 && (
                 <ul className="mt-3 space-y-1 text-sm">
@@ -169,7 +169,7 @@ export function CompletedView({
                     <li key={pl.id} className="flex justify-between">
                       <span>{pl.name}</span>
                       <span className="tabular-nums text-muted-foreground">
-                        {formatMoney(room.currency, pl.sold_price)}
+                        {formatAmount(pl.sold_price, room.currency)}
                       </span>
                     </li>
                   ))}

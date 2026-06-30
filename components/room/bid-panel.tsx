@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Gavel, ShieldCheck } from "lucide-react";
 import type { Bid, Item, Participant, Room } from "@/lib/types";
 import { tierStep } from "@/lib/types";
-import { formatMoney } from "@/lib/format";
+import { formatAmount } from "@/lib/format";
 import { placeBid } from "@/lib/auction";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -79,7 +79,7 @@ export function BidPanel({
     <Panel>
       <div className="flex items-center justify-between text-sm">
         <span className="text-muted-foreground">Your budget</span>
-        <span className="font-medium tabular-nums">{formatMoney(room.currency, budget)}</span>
+        <span className="font-medium tabular-nums">{formatAmount(budget, room.currency)}</span>
       </div>
 
       <Button size="lg" className="h-14 w-full text-base" disabled={quickDisabled} onClick={() => submit(quickBid)}>
@@ -87,13 +87,13 @@ export function BidPanel({
         {iAmHighest
           ? "You're the highest bidder"
           : isOpening
-            ? `Open at ${formatMoney(room.currency, quickBid)}`
-            : `Bid ${formatMoney(room.currency, quickBid)}`}
+            ? `Open at ${formatAmount(quickBid, room.currency)}`
+            : `Bid ${formatAmount(quickBid, room.currency)}`}
       </Button>
 
       {!isOpening && (
         <p className="text-center text-xs text-muted-foreground">
-          Current {formatMoney(room.currency, currentPrice)} · next step +{formatMoney(room.currency, step)}
+          Current {formatAmount(currentPrice, room.currency)} · next step +{formatAmount(step, room.currency)}
         </p>
       )}
 
@@ -112,7 +112,7 @@ export function BidPanel({
           onClick={() => {
             const amt = parseInt(custom, 10);
             if (!Number.isFinite(amt) || amt < quickBid) {
-              toast.error(`Custom bid must be at least ${formatMoney(room.currency, quickBid)}`);
+              toast.error(`Custom bid must be at least ${formatAmount(quickBid, room.currency)}`);
               return;
             }
             void submit(amt);

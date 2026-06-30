@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AlertTriangle, Timer, Trophy } from "lucide-react";
 import type { Bid, Item, Participant, Room } from "@/lib/types";
-import { formatMoney } from "@/lib/format";
+import { formatAmount } from "@/lib/format";
 import { playBeep } from "@/lib/sound";
 import { PlayerCard } from "@/components/room/player-card";
 import { TimerRing } from "@/components/room/timer-ring";
@@ -125,7 +125,7 @@ export function AuctionView({
           <div className="text-center">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Current bid</p>
             <p className="mt-1 text-3xl font-bold tabular-nums">
-              {formatMoney(room.currency, highest?.amount ?? currentItem.base_price)}
+              {formatAmount(highest?.amount ?? currentItem.base_price, room.currency)}
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
               {highest ? `Leading: ${teamNameById.get(highest.participant_id) ?? "Team"}` : "No bids yet"}

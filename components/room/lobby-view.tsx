@@ -4,7 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Play, Plus, Users } from "lucide-react";
 import type { Item, Participant, Room } from "@/lib/types";
-import { formatMoney } from "@/lib/format";
+import { formatAmount } from "@/lib/format";
 import { joinRoom, startAuction } from "@/lib/auction";
 import { createClient } from "@/lib/supabase/client";
 import { CsvImportDialog, type ImportedPlayer } from "@/components/csv-import-dialog";
@@ -122,7 +122,7 @@ export function LobbyView({
                     {it.role && <span className="ml-2 text-xs text-muted-foreground">{it.role}</span>}
                   </span>
                   <span className="tabular-nums text-muted-foreground">
-                    {formatMoney(room.currency, it.base_price)}
+                    {formatAmount(it.base_price, room.currency)}
                   </span>
                 </li>
               ))}

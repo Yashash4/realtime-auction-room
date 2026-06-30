@@ -6,7 +6,7 @@ import { useAuctioneer } from "@/lib/hooks/use-auctioneer";
 import { useMuted } from "@/lib/sound";
 import { useVoice } from "@/lib/auctioneer/narrator";
 import type { Bid, Item, Participant, Room } from "@/lib/types";
-import { formatMoney } from "@/lib/format";
+import { formatAmount } from "@/lib/format";
 import { TimerRing } from "@/components/room/timer-ring";
 import { BidHistory } from "@/components/room/bid-history";
 import { CommentaryFeed } from "@/components/room/commentary-feed";
@@ -105,7 +105,7 @@ export function ProjectorView({
               <div className="text-center">
                 <h2 className="text-4xl font-bold tracking-tight xl:text-6xl">{currentItem.name}</h2>
                 <p className="mt-2 text-lg text-muted-foreground xl:mt-3 xl:text-2xl">
-                  {[currentItem.role, currentItem.country, `Base ${formatMoney(room.currency, currentItem.base_price)}`].filter(Boolean).join("  ·  ")}
+                  {[currentItem.role, currentItem.country, `Base ${formatAmount(currentItem.base_price, room.currency)}`].filter(Boolean).join("  ·  ")}
                 </p>
               </div>
 
@@ -114,7 +114,7 @@ export function ProjectorView({
               <div className="text-center">
                 <p className="text-base uppercase tracking-[0.3em] text-muted-foreground xl:text-xl">Current bid</p>
                 <p className="mt-2 text-6xl font-black tabular-nums xl:text-8xl">
-                  {formatMoney(room.currency, highest?.amount ?? currentItem.base_price)}
+                  {formatAmount(highest?.amount ?? currentItem.base_price, room.currency)}
                 </p>
                 <p className="mt-2 text-2xl xl:mt-3 xl:text-3xl">
                   {highest ? (
@@ -143,7 +143,7 @@ export function ProjectorView({
                       {p.team_name}
                       {leading && <span className="rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-primary">leading</span>}
                     </span>
-                    <span className="tabular-nums text-muted-foreground">{formatMoney(room.currency, p.budget_remaining)}</span>
+                    <span className="tabular-nums text-muted-foreground">{formatAmount(p.budget_remaining, room.currency)}</span>
                   </li>
                 );
               })}

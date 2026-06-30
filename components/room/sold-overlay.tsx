@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import confetti from "canvas-confetti";
 import { Gavel, XCircle } from "lucide-react";
 import type { Item } from "@/lib/types";
-import { formatMoney } from "@/lib/format";
+import { formatAmount } from "@/lib/format";
 import { playFanfare, playGavel } from "@/lib/sound";
 
 export type SoldEvent = {
@@ -64,7 +64,7 @@ export function SoldOverlay({ event, onDone }: { event: SoldEvent | null; onDone
               to <span className="font-medium text-foreground">{event.teamName ?? "—"}</span>
             </p>
             <p className="text-3xl font-bold tabular-nums">
-              {formatMoney(event.currency, event.item.sold_price)}
+              {formatAmount(event.item.sold_price, event.currency)}
             </p>
           </>
         ) : (

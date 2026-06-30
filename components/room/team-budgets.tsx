@@ -1,7 +1,7 @@
 "use client";
 
 import type { Participant } from "@/lib/types";
-import { formatMoney } from "@/lib/format";
+import { formatAmount } from "@/lib/format";
 
 export function TeamBudgets({
   participants,
@@ -37,7 +37,7 @@ export function TeamBudgets({
                 )}
               </span>
               <span className="tabular-nums text-muted-foreground">
-                {formatMoney(currency, p.budget_remaining)}
+                {formatAmount(p.budget_remaining, currency)}
               </span>
             </li>
           ))}
