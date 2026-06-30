@@ -171,3 +171,17 @@ Documented in `.env.example`.
 - an item with no bids is marked unsold and the room completes
 
 **Manual two-window realtime test:** follow the steps under [Demo Credentials](#demo-credentials) — log in as `team1` and `team2` in two windows, have `admin` start **DEMO01**, and bid. Confirm the current player, timer, bid history, budgets, and results all update live, and that two simultaneous bids produce exactly one winner.
+
+**Concurrency stress test (automated):** `node --env-file=.env.local scripts/stress-bid.mjs [N]` provisions a pool of distinct authenticated bidders and fires `place_bid` at the same instant via `Promise.all`. It asserts the engine stays correct under simultaneous load:
+
+- many distinct bidders all bidding the **same** amount at once → **exactly one winner**, every other cleanly rejected, no double-accept, no crash
+- a burst across a spread of amounts → accepted bids are strictly increasing (no bid below the running max is ever accepted), over-budget bids rejected, no team over budget
+- many concurrent `resolve_current_item` calls → the item is **sold exactly once** (idempotent), the winner is charged once, no negative budgets
+
+Latest run:
+
+```
+RESULT: PASS — 121 concurrent same-amount bids -> exactly 1 winner, budgets consistent, 0 anomalies.
+```
+
+(The bidder count is bounded by Supabase's auth sign-in rate limit; sessions are cached so re-running accumulates a larger pool.)

@@ -43,3 +43,6 @@ next-env.d.ts
 
 # local Claude Code settings
 .claude/
+
+# stress test session cache (local only)
+scripts/.stress-sessions.json
