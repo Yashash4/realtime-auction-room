@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Check, Copy, Play, Plus, Users } from "lucide-react";
+import { Check, Copy, Play, Plus, Trash2, Users } from "lucide-react";
 import type { Item, Participant, Room } from "@/lib/types";
 import { formatAmount } from "@/lib/format";
 import { joinRoom, startAuction } from "@/lib/auction";
@@ -41,10 +41,21 @@ export function LobbyView({
   const [newPlayer, setNewPlayer] = useState({ name: "", role: "", country: "", base_price: "" });
 
   const copyCode = async () => {
-    await navigator.clipboard.writeText(room.code);
-    toast.success("Room code copied");
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    try {
+      await navigator.clipboard.writeText(room.code);
+      toast.success("Room code copied");
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      toast.error("Couldn't copy the code");
+    }
+  };
+
+  // Admin-only: remove a queued player. RLS restricts deletes to the room admin during lobby.
+  const removePlayer = async (id: string, name: string) => {
+    const { error } = await createClient().from("items").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success(`Removed ${name}`);
   };
 
   const start = async () => {
@@ -157,8 +168,21 @@ export function LobbyView({
                     {it.name}
                     {it.role && <span className="ml-2 text-xs text-muted-foreground">{it.role}</span>}
                   </span>
-                  <span className="tabular-nums text-muted-foreground">
-                    {formatAmount(it.base_price, room.currency)}
+                  <span className="flex items-center gap-2">
+                    <span className="tabular-nums text-muted-foreground">
+                      {formatAmount(it.base_price, room.currency)}
+                    </span>
+                    {isAdmin && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`Remove ${it.name}`}
+                        onClick={() => removePlayer(it.id, it.name)}
+                        className="size-7 shrink-0 text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    )}
                   </span>
                 </li>
               ))}
@@ -229,6 +253,8 @@ export function LobbyView({
             <p className="text-center text-xs text-muted-foreground">
               {items.length === 0 ? (
                 <>Add players to begin.</>
+              ) : participants.length === 0 ? (
+                <>Waiting for teams to join…</>
               ) : (
                 <>
                   <span className="font-medium text-foreground">{participants.length}</span> teams ·{" "}
@@ -239,7 +265,7 @@ export function LobbyView({
             </p>
             <Button
               size="lg"
-              disabled={pending || items.length === 0}
+              disabled={pending || items.length === 0 || participants.length === 0}
               onClick={start}
               className="w-full shadow-lg shadow-primary/30 ring-1 ring-primary/40 transition-shadow hover:shadow-xl hover:shadow-primary/40"
             >

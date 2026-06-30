@@ -35,7 +35,11 @@ const formSchema = z.object({
       }),
     )
     .min(1, "Add at least one player"),
-});
+  })
+  .refine((d) => d.antiSnipeSeconds <= d.timerSeconds, {
+    message: "Anti-snipe can't exceed the timer",
+    path: ["antiSnipeSeconds"],
+  });
 
 /** Parse the players textarea: one line "Name, Role, Country, BasePrice". */
 function parsePlayers(raw: string) {
@@ -49,10 +53,11 @@ function parsePlayers(raw: string) {
         name: name ?? "",
         role: role || null,
         country: country || null,
-        base_price: Number.isFinite(Number(price)) ? parseInt(price, 10) : 0,
+        base_price: parseInt(price, 10),
       };
     })
-    .filter((p) => p.name.length > 0);
+    // Skip lines with no name or a NaN/negative price (matches CSV import).
+    .filter((p) => p.name.length > 0 && Number.isFinite(p.base_price) && p.base_price >= 0);
 }
 
 export async function createRoom(

@@ -73,7 +73,7 @@ export function CreateRoomDialog() {
               <Label htmlFor="currency">Currency</Label>
               {/* base-ui Select doesn't emit a native form value; hidden input carries it to the action. */}
               <input type="hidden" name="currency" value={currency} />
-              <Select value={currency} onValueChange={(v) => setCurrency(v ?? "₹")}>
+              <Select value={currency} onValueChange={(v) => { if (v) setCurrency(v); }}>
                 <SelectTrigger id="currency" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
