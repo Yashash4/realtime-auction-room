@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { LogIn } from "lucide-react";
+import { Loader2, LogIn } from "lucide-react";
 import { joinRoom } from "@/lib/auction";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,12 +31,15 @@ export function JoinRoomForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-3 sm:flex-row">
+    <form
+      onSubmit={onSubmit}
+      className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm sm:flex-row sm:items-center"
+    >
       <Input
         placeholder="Room code"
         value={code}
         onChange={(e) => setCode(e.target.value.toUpperCase())}
-        className="font-mono uppercase sm:max-w-[9rem]"
+        className="font-mono tracking-widest uppercase sm:max-w-[10rem]"
         maxLength={8}
         aria-label="Room code"
       />
@@ -46,9 +49,9 @@ export function JoinRoomForm() {
         onChange={(e) => setTeamName(e.target.value)}
         aria-label="Team name"
       />
-      <Button type="submit" variant="secondary" disabled={pending} className="gap-2">
-        <LogIn className="size-4" />
-        {pending ? "Joining…" : "Join"}
+      <Button type="submit" disabled={pending} className="gap-2 sm:shrink-0">
+        {pending ? <Loader2 className="size-4 animate-spin" /> : <LogIn className="size-4" />}
+        {pending ? "Joining…" : "Join room"}
       </Button>
     </form>
   );

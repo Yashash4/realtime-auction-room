@@ -92,17 +92,17 @@ export function LiveNow({ initial }: { initial: LiveRoom[] }) {
   }, [supabase]);
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-5">
       <div className="flex items-center gap-2">
         <span className="relative flex size-2.5">
-          <span className="absolute inline-flex size-full animate-ping rounded-full bg-green-500/70" />
-          <span className="relative inline-flex size-2.5 rounded-full bg-green-500" />
+          <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary/70" />
+          <span className="relative inline-flex size-2.5 rounded-full bg-primary" />
         </span>
-        <h2 className="font-medium">Live now</h2>
+        <h2 className="text-lg font-semibold tracking-tight">Live now</h2>
       </div>
 
       {rooms.length === 0 ? (
-        <div className="rounded-xl border border-dashed bg-muted/30 p-10 text-center text-sm text-muted-foreground">
+        <div className="rounded-2xl border border-dashed bg-muted/20 p-10 text-center text-sm text-muted-foreground">
           No live auctions right now.
         </div>
       ) : (
@@ -111,18 +111,22 @@ export function LiveNow({ initial }: { initial: LiveRoom[] }) {
             <Link
               key={r.id}
               href={`/rooms/${r.code}/projector`}
-              className="group flex flex-col rounded-xl border bg-card p-5 transition-colors hover:border-foreground/20 hover:bg-accent/40"
+              className="group relative flex flex-col overflow-hidden rounded-xl border border-primary/20 bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-xl"
             >
-              <div className="flex items-start justify-between gap-3">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0 bg-[radial-gradient(80%_120%_at_100%_0%,color-mix(in_oklch,var(--color-primary)_12%,transparent),transparent_60%)]"
+              />
+              <div className="relative flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <h3 className="truncate font-medium">{r.name}</h3>
                   <p className="mt-0.5 truncate text-xs text-muted-foreground">Hosted by {r.host}</p>
                 </div>
-                <span className="flex shrink-0 items-center gap-1 rounded-full bg-green-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase text-green-500">
+                <span className="flex shrink-0 items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold uppercase text-primary">
                   <Radio className="size-3" /> Live
                 </span>
               </div>
-              <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
+              <div className="relative mt-4 flex items-center justify-between text-sm text-muted-foreground">
                 <span className="flex min-w-0 items-center gap-1.5">
                   <Gavel className="size-4 shrink-0" />
                   <span className="truncate">{r.currentPlayer ?? "Starting…"}</span>
