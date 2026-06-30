@@ -11,6 +11,7 @@ import { TimerRing } from "@/components/room/timer-ring";
 import { BidHistory } from "@/components/room/bid-history";
 import { CommentaryFeed } from "@/components/room/commentary-feed";
 import { ReactionsLayer } from "@/components/room/reactions-layer";
+import { VoiceSettings } from "@/components/room/voice-settings";
 
 function initials(name: string) {
   return name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
@@ -64,6 +65,7 @@ export function ProjectorView({
             <Radio className={`size-4 ${conn === "live" ? "text-green-500" : conn === "error" ? "text-destructive" : "text-amber-500"}`} />
             {conn === "live" ? "Live" : conn === "error" ? "Reconnecting" : "Connecting"} · {watching} watching
           </span>
+          <VoiceSettings />
           <button onClick={toggleVoice} aria-label="Toggle auctioneer voice" className="text-muted-foreground hover:text-foreground">
             {voice ? <Megaphone className="size-5" /> : <MegaphoneOff className="size-5" />}
           </button>

@@ -129,5 +129,8 @@
   }
   html {
     @apply font-sans;
+    /* App is dark-only: tell the browser so native controls (the <select>
+       dropdown popups, scrollbars) render dark instead of light-on-light. */
+    color-scheme: dark;
   }
 }
