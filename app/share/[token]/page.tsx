@@ -1,8 +1,18 @@
 import Link from "next/link";
-import { Gavel, SearchX, Trophy } from "lucide-react";
+import { Banknote, Crown, Gavel, PiggyBank, SearchX, Tag, TrendingUp, Trophy, Users, Wallet, type LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { formatAmount } from "@/lib/format";
+import { buildResultsReport, type Award } from "@/lib/squad-report";
+import type { Item, Participant, Room } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+
+const AWARD_ICON: Record<Award["icon"], LucideIcon> = {
+  spender: Banknote,
+  players: Users,
+  priciest: Crown,
+  value: Tag,
+  budget: PiggyBank,
+};
 
 export const dynamic = "force-dynamic";
 
@@ -98,6 +108,41 @@ function Results({ data }: { data: ShareResults }) {
   const soldCount = players.filter((p) => p.status === "sold").length;
   const unsoldCount = players.length - soldCount;
 
+  // Synthetic inputs for the pure, API-free report builder (shared with the
+  // logged-in results view). The share doc carries no ids, so team names double
+  // as participant ids and sold_to references.
+  const participants = teams.map((t) => ({
+    id: t.team_name,
+    team_name: t.team_name,
+    budget_remaining: t.budget_remaining,
+  })) as unknown as Participant[];
+  const items = players.map((p, i) => ({
+    id: String(i),
+    name: p.name,
+    role: p.role,
+    status: p.status,
+    sold_to: p.won_by,
+    sold_price: p.price,
+    base_price: 0,
+    order_index: i,
+  })) as unknown as Item[];
+  const report = buildResultsReport(
+    { currency: room.currency, round: room.round } as unknown as Room,
+    items,
+    participants,
+  );
+  const recapByTeam = new Map(report.reports.map((r) => [r.teamName, r.text]));
+
+  const totalSpent = players.reduce((s, p) => s + (p.status === "sold" ? (p.price ?? 0) : 0), 0);
+  const highestSale = players.reduce((m, p) => Math.max(m, p.status === "sold" ? (p.price ?? 0) : 0), 0);
+  const budgetLeft = teams.reduce((s, t) => s + t.budget_remaining, 0);
+  const stats: { icon: LucideIcon; label: string; value: string }[] = [
+    { icon: Users, label: "Players sold", value: String(soldCount) },
+    { icon: Banknote, label: "Total spent", value: formatAmount(totalSpent, room.currency) },
+    { icon: TrendingUp, label: "Highest sale", value: formatAmount(highestSale, room.currency) },
+    { icon: Wallet, label: "Budget left", value: formatAmount(budgetLeft, room.currency) },
+  ];
+
   return (
     <main className="mx-auto w-full max-w-4xl flex-1 space-y-8 px-4 py-8">
       <div className="flex flex-col items-center gap-2 text-center">
@@ -113,7 +158,45 @@ function Results({ data }: { data: ShareResults }) {
         <p className="text-sm text-muted-foreground">
           Final results · {soldCount} sold · {unsoldCount} unsold
         </p>
+        <p className="max-w-xl text-sm text-muted-foreground">{report.summary}</p>
       </div>
+
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {stats.map((s) => {
+          const Icon = s.icon;
+          return (
+            <div key={s.label} className="rounded-2xl border bg-card p-4 shadow-lg">
+              <div className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-muted-foreground">
+                <Icon className="size-3.5 text-primary" /> {s.label}
+              </div>
+              <p className="mt-2 text-3xl font-bold tabular-nums">{s.value}</p>
+            </div>
+          );
+        })}
+      </div>
+
+      {report.awards.length > 0 && (
+        <section className="space-y-3">
+          <h3 className="font-medium">Awards</h3>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {report.awards.map((a) => {
+              const Icon = AWARD_ICON[a.icon];
+              return (
+                <div key={a.label} className="rounded-xl border bg-card p-4 shadow-lg">
+                  <div className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-muted-foreground">
+                    <Icon className="size-3.5 text-primary" /> {a.label}
+                  </div>
+                  <p className="mt-2 font-semibold leading-tight">{a.winner}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {a.value}
+                    {a.sub ? ` · ${a.sub}` : ""}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       <section className="space-y-3">
         <h3 className="font-medium">Results</h3>
@@ -174,6 +257,9 @@ function Results({ data }: { data: ShareResults }) {
                   ))}
                 </ul>
               )}
+              <p className="mt-3 border-l-2 border-primary/40 pl-3 italic text-muted-foreground">
+                {recapByTeam.get(t.team_name)}
+              </p>
             </div>
           ))}
         </div>

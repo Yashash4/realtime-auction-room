@@ -126,7 +126,7 @@ export function buildResultsReport(
 
     if (topBuy) {
       const team = participants.find((p) => p.id === topBuy.sold_to)?.team_name;
-      awards.push({ icon: "priciest", label: "Priciest buy", winner: topBuy.name, value: money(topBuy.sold_price ?? 0), sub: team });
+      awards.push({ icon: "priciest", label: "Priciest buy", winner: topBuy.name, value: money(topBuy.sold_price ?? 0), sub: team ? `won by ${team}` : undefined });
     }
 
     const bargain = bargainOf(sold);

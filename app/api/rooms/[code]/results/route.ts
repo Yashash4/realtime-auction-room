@@ -36,7 +36,7 @@ export async function GET(
     const rows: string[] = ["Player,Role,Country,Won By,Price"];
     for (const it of items ?? []) {
       const wonBy =
-        it.status === "sold" ? (teamById.get(it.sold_to ?? "")?.team_name ?? "") : "Unsold";
+        it.status === "sold" ? (teamById.get(it.sold_to ?? "")?.team_name ?? "—") : "Unsold";
       const price = it.status === "sold" ? it.sold_price : null;
       rows.push(
         [esc(it.name), esc(it.role ?? ""), esc(it.country ?? ""), esc(wonBy), esc(price)].join(","),

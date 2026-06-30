@@ -161,6 +161,9 @@ export function CompletedView({
 
       <section className="space-y-3">
         <h3 className="font-medium">Results</h3>
+        {sold.length === 0 && (
+          <p className="text-sm text-muted-foreground">No players were sold.</p>
+        )}
         <div className="overflow-hidden rounded-xl border shadow-lg">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-left text-muted-foreground">
@@ -196,6 +199,9 @@ export function CompletedView({
 
       <section className="space-y-3">
         <h3 className="font-medium">Squads</h3>
+        {participants.length === 0 && (
+          <p className="text-sm text-muted-foreground">No teams joined.</p>
+        )}
         <div className="grid gap-4 sm:grid-cols-2">
           {squads.map(({ team, players, spent }) => {
             const isStandout = team.id === standoutId;
