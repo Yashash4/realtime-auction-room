@@ -12,6 +12,7 @@ import { BidPanel } from "@/components/room/bid-panel";
 import { BidHistory } from "@/components/room/bid-history";
 import { TeamBudgets } from "@/components/room/team-budgets";
 import { AdminControls } from "@/components/room/admin-controls";
+import { CommentaryFeed } from "@/components/room/commentary-feed";
 
 export function AuctionView({
   room,
@@ -157,6 +158,7 @@ export function AuctionView({
           highlightId={highest?.participant_id}
           myParticipantId={myParticipant?.id}
         />
+        <CommentaryFeed />
       </div>
     </div>
   );

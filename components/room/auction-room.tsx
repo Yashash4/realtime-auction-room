@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Copy, Eye, Radio, Volume2, VolumeX } from "lucide-react";
+import { ArrowLeft, Copy, Eye, Megaphone, MegaphoneOff, Radio, Volume2, VolumeX } from "lucide-react";
 import { useAuctionRoom } from "@/lib/hooks/use-auction-room";
+import { useAuctioneer } from "@/lib/hooks/use-auctioneer";
 import { useMuted } from "@/lib/sound";
+import { primeSpeech, useVoice } from "@/lib/auctioneer/narrator";
 import type { Bid, Item, Participant, Room } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { LobbyView } from "@/components/room/lobby-view";
@@ -54,8 +56,19 @@ export function AuctionRoom({
     });
   }, [items, participants, room.currency]);
 
+  // Live auctioneer: derives spoken beats + the commentary feed from state.
+  useAuctioneer({ room, items, currentItem, itemBids, participants, nowMs });
+
   const clearSold = useCallback(() => setSoldEvent(null), []);
   const [muted, toggleMuted] = useMuted();
+  const [voice, toggleVoice] = useVoice();
+
+  // Warm up TTS on the first user gesture (some browsers gate the first utterance).
+  useEffect(() => {
+    const prime = () => primeSpeech();
+    window.addEventListener("pointerdown", prime, { once: true });
+    return () => window.removeEventListener("pointerdown", prime);
+  }, []);
 
   const copyCode = () => {
     navigator.clipboard.writeText(room.code).then(
@@ -87,6 +100,15 @@ export function AuctionRoom({
               <Eye className="size-3.5" />
               {watching} watching
             </span>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={toggleVoice}
+              aria-label={voice ? "Turn off auctioneer voice" : "Turn on auctioneer voice"}
+              title={voice ? "Auctioneer voice on" : "Auctioneer voice off"}
+            >
+              {voice ? <Megaphone className="size-4" /> : <MegaphoneOff className="size-4 text-muted-foreground" />}
+            </Button>
             <Button
               variant="ghost"
               size="icon-sm"
