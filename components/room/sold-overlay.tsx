@@ -34,7 +34,7 @@ export function SoldOverlay({ event, onDone }: { event: SoldEvent | null; onDone
           spread: 75,
           startVelocity: 45,
           origin: { y: 0.6 },
-          colors: ["#f59e0b", "#10b981", "#3b82f6", "#ffffff"],
+          colors: ["#8b5cf6", "#10b981", "#6366f1", "#ffffff"],
         });
       fire();
       burst = setInterval(fire, 700); // a couple of follow-up pops
@@ -54,10 +54,10 @@ export function SoldOverlay({ event, onDone }: { event: SoldEvent | null; onDone
       <div className="flex flex-col items-center gap-3 rounded-2xl border bg-card px-12 py-10 text-center shadow-2xl duration-300 animate-in zoom-in-95">
         {sold ? (
           <>
-            <div className="flex size-16 items-center justify-center rounded-full bg-amber-500/15 text-amber-500">
+            <div className="flex size-16 items-center justify-center rounded-full bg-primary/15 text-primary ring-1 ring-primary/30">
               <Gavel className="size-8" />
             </div>
-            <p className="text-4xl font-black tracking-tight text-amber-500">SOLD</p>
+            <p className="text-4xl font-black tracking-tight text-primary">SOLD</p>
             <p className="text-xl font-semibold">{event.item.name}</p>
             <p className="text-muted-foreground">
               to <span className="font-medium text-foreground">{event.teamName ?? "—"}</span>

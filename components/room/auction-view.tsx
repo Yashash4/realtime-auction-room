@@ -94,7 +94,7 @@ export function AuctionView({
           <div className="relative">
             <TimerRing msRemaining={msRemaining} totalMs={totalMs} paused={paused} />
             {extended && (
-              <span className="absolute -top-1 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full bg-amber-500 px-2.5 py-1 text-xs font-semibold text-white shadow-lg duration-300 animate-in fade-in slide-in-from-bottom-1">
+              <span className="absolute -top-1 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground shadow-lg duration-300 animate-in fade-in slide-in-from-bottom-1">
                 <Timer className="size-3" /> +time
               </span>
             )}

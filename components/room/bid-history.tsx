@@ -25,7 +25,7 @@ export function BidHistory({
           {bids.map((b, i) => (
             <li key={b.id} className="flex items-center justify-between px-4 py-2.5 text-sm">
               <span className="flex items-center gap-2">
-                {i === 0 && <Crown className="size-4 text-amber-500" />}
+                {i === 0 && <Crown className="size-4 text-emerald-400" />}
                 <span className={i === 0 ? "font-medium" : ""}>
                   {teamNameById.get(b.participant_id) ?? "Team"}
                 </span>

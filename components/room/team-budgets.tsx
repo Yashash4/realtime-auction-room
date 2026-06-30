@@ -31,7 +31,7 @@ export function TeamBudgets({
                   <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">you</span>
                 )}
                 {p.id === highlightId && (
-                  <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] text-amber-600 dark:text-amber-400">
+                  <span className="rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] text-emerald-400">
                     leading
                   </span>
                 )}
