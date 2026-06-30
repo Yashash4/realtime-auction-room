@@ -28,7 +28,7 @@ export function CompletedView({
   return (
     <div className="mx-auto max-w-4xl space-y-8">
       <div className="flex flex-col items-center gap-2 text-center">
-        <div className="flex size-12 items-center justify-center rounded-full bg-amber-500/15 text-amber-500">
+        <div className="flex size-12 items-center justify-center rounded-full bg-primary/15 text-primary ring-1 ring-primary/30">
           <Trophy className="size-6" />
         </div>
         <h2 className="text-2xl font-bold">Auction complete</h2>
