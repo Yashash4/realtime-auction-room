@@ -24,10 +24,14 @@ export async function placeBid(
   itemId: string,
   amount: number,
 ): Promise<Bid> {
+  // Deterministic key: the same (item, amount) intent — so a double-click or
+  // retry maps to one bid. Valid amounts strictly increase, so distinct bids
+  // never collide on this key.
   const { data, error } = await rpc().rpc("place_bid", {
     p_room: roomId,
     p_item: itemId,
     p_amount: amount,
+    p_key: `${itemId}:${amount}`,
   });
   if (error) throw new Error(error.message);
   return data as Bid;
