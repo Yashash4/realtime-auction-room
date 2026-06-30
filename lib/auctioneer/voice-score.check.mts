@@ -43,4 +43,14 @@ assert.equal(
   "Google UK English Female",
 );
 
+// Default preference: Google UK English Female wins even over a neural en-IN voice.
+assert.equal(
+  pickBestVoice([
+    v("Microsoft Ravi Online (Natural) - English (India)", "en-IN", false),
+    v("Google US English", "en-US", false),
+    v("Google UK English Female", "en-GB", false),
+  ])!.name,
+  "Google UK English Female",
+);
+
 console.log("voice-score self-check: ALL ASSERTS PASSED");

@@ -24,8 +24,14 @@ export function scoreVoice(v: VoiceLike): number {
   return s;
 }
 
+// Hand-picked default commentary voice: prefer it outright wherever the browser
+// has it; otherwise fall back to quality scoring below.
+const PREFERRED = "google uk english female";
+
 export function pickBestVoice<T extends VoiceLike>(voices: T[]): T | null {
   if (!voices.length) return null;
+  const preferred = voices.find((v) => (v.name || "").toLowerCase().includes(PREFERRED));
+  if (preferred) return preferred;
   // English first (a non-English voice reading English sounds wrong), then best
   // quality within that pool. Only fall back to all voices if none are English.
   const english = voices.filter((v) => (v.lang || "").toLowerCase().startsWith("en"));
