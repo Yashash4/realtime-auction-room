@@ -2,7 +2,7 @@
 // line of a category; renderLine() fills {vars}. No LLM — instant and local.
 
 export type BeatCategory =
-  | "auction_start"
+  | "welcome"
   | "new_player"
   | "first_bid"
   | "raise_small"
@@ -12,13 +12,20 @@ export type BeatCategory =
   | "going_once"
   | "going_twice"
   | "sold"
-  | "unsold";
+  | "unsold"
+  | "wrap"
+  | "budget_thin"
+  | "budget_deep"
+  | "milestone_record"
+  | "milestone_crore"
+  | "lull"
+  | "spree";
 
 const POOLS: Record<BeatCategory, string[]> = {
-  auction_start: [
-    "Welcome to the auction! Let's get bidding.",
-    "Here we go — the auction is underway!",
-    "Alright, paddles ready. Let's begin!",
+  welcome: [
+    "Welcome to the auction! {count} players up for grabs — let's begin!",
+    "Here we go — {count} players on the table tonight. Let's get bidding!",
+    "Paddles ready! {count} up for auction — let the bidding begin!",
   ],
   new_player: [
     "Next up — {player}! {desc}. We open at {base}. Who'll start us off?",
@@ -86,6 +93,41 @@ const POOLS: Record<BeatCategory, string[]> = {
     "Couldn't find a buyer — {player} unsold.",
     "And that one passes — {player} goes unsold.",
   ],
+  wrap: [
+    "And that's a wrap! Let's see the squads.",
+    "That's all of them — hammer's down for the night. Let's see who got who!",
+    "We're done here! Time to look at the final squads.",
+  ],
+  budget_thin: [
+    "{team}'s wallet is getting thin.",
+    "{team} digging deep now — not much left in the tank.",
+    "Careful, {team} — the purse is running low.",
+  ],
+  budget_deep: [
+    "{team} still has deep pockets.",
+    "Plenty left in {team}'s war chest.",
+    "{team} barely getting started — loads still to spend.",
+  ],
+  milestone_record: [
+    "New record price!",
+    "That's the most expensive buy so far!",
+    "Top of the charts — a new record!",
+  ],
+  milestone_crore: [
+    "First crore-plus deal of the night!",
+    "We've cracked a crore — big money now!",
+  ],
+  lull: [
+    "Any takers at {amount}?",
+    "Don't let this one slip!",
+    "Going quiet… anyone else at {amount}?",
+    "Surely someone wants this — {amount}?",
+  ],
+  spree: [
+    "{team} on a spree tonight!",
+    "{team} just can't stop buying!",
+    "Someone stop {team} — they're loading up!",
+  ],
 };
 
 const lastIdx: Partial<Record<BeatCategory, number>> = {};
@@ -99,7 +141,7 @@ function pick(cat: BeatCategory): string {
 }
 
 export type LineVars = Partial<
-  Record<"player" | "desc" | "team" | "amount" | "base" | "step", string>
+  Record<"player" | "desc" | "team" | "amount" | "base" | "step" | "count", string>
 >;
 
 export function renderLine(cat: BeatCategory, vars: LineVars): string {

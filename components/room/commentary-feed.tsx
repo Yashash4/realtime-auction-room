@@ -6,20 +6,27 @@ import {
   ChevronsUp,
   ChevronUp,
   CircleX,
+  Flag,
+  Flame,
   Gavel,
+  Gem,
   Hand,
+  Hourglass,
   Megaphone,
   Mic,
   Swords,
   Timer,
+  Trophy,
   UserPlus,
+  Wallet,
+  WalletMinimal,
   type LucideIcon,
 } from "lucide-react";
-import { onNarration, type NarrationLine } from "@/lib/auctioneer/narrator";
+import { onNarration, onSpeaking, type NarrationLine } from "@/lib/auctioneer/narrator";
 import type { BeatCategory } from "@/lib/auctioneer/lines";
 
 const ICON: Record<BeatCategory, LucideIcon> = {
-  auction_start: Megaphone,
+  welcome: Megaphone,
   new_player: UserPlus,
   first_bid: Hand,
   raise_small: ChevronUp,
@@ -30,14 +37,23 @@ const ICON: Record<BeatCategory, LucideIcon> = {
   going_twice: AlarmClock,
   sold: Gavel,
   unsold: CircleX,
+  wrap: Flag,
+  budget_thin: WalletMinimal,
+  budget_deep: Wallet,
+  milestone_record: Trophy,
+  milestone_crore: Gem,
+  lull: Hourglass,
+  spree: Flame,
 };
 
-/** Live text feed mirroring the spoken commentary (works even when muted). */
+/** Live text feed mirroring the spoken commentary; the spoken line is highlighted. */
 export function CommentaryFeed() {
   const [lines, setLines] = useState<NarrationLine[]>([]);
+  const [speakingId, setSpeakingId] = useState<number | null>(null);
   const bottom = useRef<HTMLDivElement>(null);
 
   useEffect(() => onNarration((l) => setLines((prev) => [...prev, l].slice(-8))), []);
+  useEffect(() => onSpeaking(setSpeakingId), []);
   useEffect(() => {
     bottom.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [lines]);
@@ -50,16 +66,18 @@ export function CommentaryFeed() {
       {lines.length === 0 ? (
         <p className="px-4 py-6 text-center text-sm text-muted-foreground">The auctioneer is warming up…</p>
       ) : (
-        <ul className="max-h-64 space-y-2 overflow-y-auto px-4 py-3">
-          {lines.map((l, i) => {
+        <ul className="max-h-64 space-y-1 overflow-y-auto px-2 py-2">
+          {lines.map((l) => {
             const Icon = ICON[l.category] ?? Mic;
-            const isLast = i === lines.length - 1;
+            const live = l.id === speakingId;
             return (
               <li
                 key={l.id}
-                className={`flex items-start gap-2 text-sm duration-200 animate-in fade-in ${isLast ? "text-foreground" : "text-muted-foreground"}`}
+                className={`flex items-start gap-2 rounded-md px-2 py-1.5 text-sm duration-200 animate-in fade-in ${
+                  live ? "bg-primary/10 font-medium text-foreground" : "text-muted-foreground"
+                }`}
               >
-                <Icon className={`mt-0.5 size-3.5 shrink-0 ${isLast ? "text-primary" : ""}`} />
+                <Icon className={`mt-0.5 size-3.5 shrink-0 ${live ? "text-primary" : ""}`} />
                 <span>{l.text}</span>
               </li>
             );

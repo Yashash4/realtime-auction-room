@@ -14,6 +14,7 @@ import { LobbyView } from "@/components/room/lobby-view";
 import { AuctionView } from "@/components/room/auction-view";
 import { CompletedView } from "@/components/room/completed-view";
 import { SoldOverlay, type SoldEvent } from "@/components/room/sold-overlay";
+import { VoiceSettings } from "@/components/room/voice-settings";
 
 export function AuctionRoom({
   initial,
@@ -100,24 +101,30 @@ export function AuctionRoom({
               <Eye className="size-3.5" />
               {watching} watching
             </span>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={toggleVoice}
-              aria-label={voice ? "Turn off auctioneer voice" : "Turn on auctioneer voice"}
-              title={voice ? "Auctioneer voice on" : "Auctioneer voice off"}
-            >
-              {voice ? <Megaphone className="size-4" /> : <MegaphoneOff className="size-4 text-muted-foreground" />}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={toggleMuted}
-              aria-label={muted ? "Unmute sounds" : "Mute sounds"}
-              title={muted ? "Unmute sounds" : "Mute sounds"}
-            >
-              {muted ? <VolumeX className="size-4 text-muted-foreground" /> : <Volume2 className="size-4" />}
-            </Button>
+            {/* Sound/voice controls are meaningless on a finished results page. */}
+            {room.status !== "completed" && (
+              <>
+                <VoiceSettings />
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={toggleVoice}
+                  aria-label={voice ? "Turn off auctioneer voice" : "Turn on auctioneer voice"}
+                  title={voice ? "Auctioneer voice on" : "Auctioneer voice off"}
+                >
+                  {voice ? <Megaphone className="size-4" /> : <MegaphoneOff className="size-4 text-muted-foreground" />}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={toggleMuted}
+                  aria-label={muted ? "Unmute sounds" : "Mute sounds"}
+                  title={muted ? "Unmute sounds" : "Mute sounds"}
+                >
+                  {muted ? <VolumeX className="size-4 text-muted-foreground" /> : <Volume2 className="size-4" />}
+                </Button>
+              </>
+            )}
             <span
               className="flex items-center gap-1.5 text-xs text-muted-foreground"
               title={`Realtime: ${conn}`}

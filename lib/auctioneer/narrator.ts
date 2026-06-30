@@ -1,16 +1,20 @@
 // Narrator: one speech pipeline that both speaks (browser speechSynthesis) and
 // emits the on-screen feed. Pacing keeps the voice in sync with live state:
 //   - critical beats (sold / gone / anti-snipe) interrupt and flush lower lanes
-//   - normal beats (intro, going once/twice) queue, but are stale-dropped on dequeue
-//   - raise beats coalesce into ONE slot, so only the CURRENT high is announced
-// When voice is off/muted (or TTS is blocked) each beat is "spoken" via an
-// estimated-duration timer instead, so the feed still paces like speech.
+//   - normal beats (intro, going once/twice, milestones, bookends) queue, but are
+//     stale-dropped on dequeue
+//   - raise beats coalesce into ONE slot (only the CURRENT high is announced)
+//   - flavor beats (budget / spree / lull) coalesce into a LAST slot, played only
+//     when nothing meaningful is pending — so they never delay the real beats
+// When voice is off/muted (or TTS blocked) each beat is "spoken" via an estimated
+// timer instead, so the feed (and the spoken-line highlight) still pace like speech.
 
 import { useCallback, useEffect, useState } from "react";
 import { isMuted } from "@/lib/sound";
 import type { BeatCategory } from "@/lib/auctioneer/lines";
 
 const VKEY = "auction:voice";
+const CFG_KEY = "auction:voicecfg";
 
 export function voiceOn(): boolean {
   try {
@@ -27,16 +31,34 @@ export function setVoiceOn(v: boolean): void {
   }
 }
 
+export type VoiceConfig = { voiceURI: string | null; rate: number; volume: number };
+const DEFAULT_CFG: VoiceConfig = { voiceURI: null, rate: 1.05, volume: 1 };
+
+export function getVoiceConfig(): VoiceConfig {
+  try {
+    return { ...DEFAULT_CFG, ...JSON.parse(localStorage.getItem(CFG_KEY) ?? "{}") };
+  } catch {
+    return { ...DEFAULT_CFG };
+  }
+}
+export function setVoiceConfig(patch: Partial<VoiceConfig>): VoiceConfig {
+  const next = { ...getVoiceConfig(), ...patch };
+  try {
+    localStorage.setItem(CFG_KEY, JSON.stringify(next));
+  } catch {
+    /* ignore */
+  }
+  return next;
+}
+
 export type NarrationLine = { id: number; text: string; category: BeatCategory };
 export type Beat = {
   text: string;
   category: BeatCategory;
-  priority: "critical" | "normal" | "raise";
-  /** Evaluated at dequeue; true -> the beat is outdated and gets dropped. */
+  priority: "critical" | "normal" | "raise" | "flavor";
   isStale?: () => boolean;
 };
 
-// Current live-state snapshot, refreshed by the hook; used for staleness checks.
 export type NarrState = {
   itemId: string | null;
   highest: number | null;
@@ -52,35 +74,50 @@ export function getNarrationState(): NarrState {
   return narr;
 }
 
-// Feed fan-out.
+// Feed fan-out + currently-spoken line id (for the subtitle highlight).
 const feedListeners = new Set<(l: NarrationLine) => void>();
+const speakingListeners = new Set<(id: number | null) => void>();
 export function onNarration(cb: (l: NarrationLine) => void) {
   feedListeners.add(cb);
   return () => {
     feedListeners.delete(cb);
   };
 }
+export function onSpeaking(cb: (id: number | null) => void) {
+  speakingListeners.add(cb);
+  return () => {
+    speakingListeners.delete(cb);
+  };
+}
 let feedSeq = 0;
+function setSpeakingId(id: number | null) {
+  speakingListeners.forEach((cb) => cb(id));
+}
 
-// Queue state.
 let queue: Beat[] = [];
 let raiseSlot: Beat | null = null;
+let flavorSlot: Beat | null = null;
 let speaking = false;
-let gen = 0; // bumped on cancel; in-flight callbacks check it to avoid double-advance
+let gen = 0;
 let timer: ReturnType<typeof setTimeout> | null = null;
+let lastText = "";
+let lastTextAt = 0;
 
-let cachedVoice: SpeechSynthesisVoice | null = null;
-function pickVoice(): SpeechSynthesisVoice | null {
+function findVoice(): SpeechSynthesisVoice | null {
   if (typeof speechSynthesis === "undefined") return null;
-  if (cachedVoice) return cachedVoice;
   const voices = speechSynthesis.getVoices();
   if (!voices.length) return null;
+  const wanted = getVoiceConfig().voiceURI;
+  if (wanted) {
+    const v = voices.find((x) => x.voiceURI === wanted);
+    if (v) return v;
+  }
   const prefs = ["en-in", "en-gb", "en-au", "en-us", "en"];
   for (const p of prefs) {
     const v = voices.find((x) => x.lang?.toLowerCase().startsWith(p));
-    if (v) return (cachedVoice = v);
+    if (v) return v;
   }
-  return (cachedVoice = voices[0]);
+  return voices[0];
 }
 
 function estimateMs(text: string) {
@@ -103,7 +140,7 @@ function cancel() {
 function deliver(b: Beat, onDone: () => void) {
   const myGen = gen;
   const finish = () => {
-    if (myGen !== gen) return; // superseded by a cancel/interrupt
+    if (myGen !== gen) return;
     if (timer) {
       clearTimeout(timer);
       timer = null;
@@ -114,21 +151,23 @@ function deliver(b: Beat, onDone: () => void) {
   const audible = !isMuted() && voiceOn() && typeof speechSynthesis !== "undefined";
   if (audible) {
     try {
+      const cfg = getVoiceConfig();
       const u = new SpeechSynthesisUtterance(b.text);
-      const v = pickVoice();
+      const v = findVoice();
       if (v) u.voice = v;
-      u.rate = b.priority === "critical" ? 1.12 : 1.05;
+      u.rate = Math.min(1.6, cfg.rate * (b.priority === "critical" ? 1.06 : 1));
       u.pitch = b.priority === "critical" ? 1.12 : 1.02;
+      u.volume = cfg.volume;
       u.onend = finish;
       u.onerror = finish;
       speechSynthesis.speak(u);
-      timer = setTimeout(finish, estimateMs(b.text) + 1800); // safety net if TTS is blocked/silent
+      timer = setTimeout(finish, estimateMs(b.text) + 1800);
       return;
     } catch {
-      /* fall through to silent pacing */
+      /* fall through */
     }
   }
-  timer = setTimeout(finish, estimateMs(b.text)); // muted/off/unavailable -> pace silently
+  timer = setTimeout(finish, estimateMs(b.text));
 }
 
 function pump(force: boolean) {
@@ -139,26 +178,45 @@ function pump(force: boolean) {
     next = raiseSlot;
     raiseSlot = null;
   }
-  if (!next) return;
+  if (!next && flavorSlot) {
+    next = flavorSlot;
+    flavorSlot = null;
+  }
+  if (!next) {
+    setSpeakingId(null);
+    return;
+  }
   if (next.isStale?.()) {
-    pump(true); // drop stale, try the next one
+    pump(true);
+    return;
+  }
+  // Suppress a back-to-back identical line (also masks dev StrictMode double-mounts).
+  if (next.priority !== "critical" && next.text === lastText && Date.now() - lastTextAt < 2500) {
+    pump(true);
     return;
   }
   speaking = true;
+  lastText = next.text;
+  lastTextAt = Date.now();
   const line: NarrationLine = { id: ++feedSeq, text: next.text, category: next.category };
   feedListeners.forEach((cb) => cb(line));
+  setSpeakingId(line.id);
   deliver(next, () => pump(true));
 }
 
 export function narrate(b: Beat) {
   if (b.priority === "critical") {
-    queue = queue.filter((q) => q.priority === "critical"); // flush normals/raises
+    queue = queue.filter((q) => q.priority === "critical");
     raiseSlot = null;
+    flavorSlot = null;
     cancel();
     queue.push(b);
     pump(true);
   } else if (b.priority === "raise") {
-    raiseSlot = b; // coalesce: only the latest high survives
+    raiseSlot = b; // coalesce to the current high
+    pump(false);
+  } else if (b.priority === "flavor") {
+    flavorSlot = b; // only plays in a genuine gap
     pump(false);
   } else {
     queue.push(b);
@@ -166,7 +224,6 @@ export function narrate(b: Beat) {
   }
 }
 
-/** Warm up TTS on a user gesture (some browsers gate the first utterance). */
 export function primeSpeech() {
   try {
     if (typeof speechSynthesis !== "undefined" && !isMuted() && voiceOn()) {
@@ -177,7 +234,23 @@ export function primeSpeech() {
   }
 }
 
-/** Reactive voice on/off for the toggle UI. */
+/** Speak a one-off sample with the current config (for the settings "Test" button). */
+export function speakSample(text: string) {
+  try {
+    if (typeof speechSynthesis === "undefined") return;
+    const cfg = getVoiceConfig();
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    const v = findVoice();
+    if (v) u.voice = v;
+    u.rate = cfg.rate;
+    u.volume = cfg.volume;
+    speechSynthesis.speak(u);
+  } catch {
+    /* ignore */
+  }
+}
+
 export function useVoice(): [boolean, () => void] {
   const [on, setOn] = useState(true);
   useEffect(() => setOn(voiceOn()), []);
@@ -187,9 +260,27 @@ export function useVoice(): [boolean, () => void] {
     setOn(next);
     if (next) primeSpeech();
     else {
-      cancel(); // stop current line immediately...
-      pump(true); // ...but keep the feed flowing silently
+      cancel();
+      pump(true);
     }
   }, []);
   return [on, toggle];
+}
+
+/** Voice list + config for the picker UI. */
+export function useVoiceSettings() {
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [cfg, setCfg] = useState<VoiceConfig>(DEFAULT_CFG);
+
+  useEffect(() => {
+    setCfg(getVoiceConfig());
+    if (typeof speechSynthesis === "undefined") return;
+    const load = () => setVoices(speechSynthesis.getVoices());
+    load();
+    speechSynthesis.addEventListener("voiceschanged", load);
+    return () => speechSynthesis.removeEventListener("voiceschanged", load);
+  }, []);
+
+  const update = useCallback((patch: Partial<VoiceConfig>) => setCfg(setVoiceConfig(patch)), []);
+  return { voices, cfg, update };
 }

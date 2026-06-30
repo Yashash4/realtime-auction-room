@@ -89,6 +89,53 @@ export function playFanfare() {
   notes.forEach((f, i) => tone(a, f, a.currentTime + i * 0.1, 0.2, { type: "triangle", peak: 0.2 }));
 }
 
+/** Tiny synthesized crowd cheer (on SOLD): a band-passed noise swell + rising notes. */
+export function playCheer() {
+  const a = audio();
+  if (!a) return;
+  const t0 = a.currentTime;
+  const buf = a.createBuffer(1, Math.floor(a.sampleRate * 0.6), a.sampleRate);
+  const ch = buf.getChannelData(0);
+  for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1;
+  const noise = a.createBufferSource();
+  noise.buffer = buf;
+  const bp = a.createBiquadFilter();
+  bp.type = "bandpass";
+  bp.frequency.value = 1100;
+  bp.Q.value = 0.7;
+  const ng = a.createGain();
+  ng.gain.setValueAtTime(0.0001, t0);
+  ng.gain.exponentialRampToValueAtTime(0.16, t0 + 0.12);
+  ng.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.6);
+  noise.connect(bp);
+  bp.connect(ng);
+  ng.connect(a.destination);
+  noise.start(t0);
+  noise.stop(t0 + 0.6);
+  [523, 659, 784].forEach((f, i) => tone(a, f, t0 + i * 0.08, 0.25, { type: "triangle", peak: 0.16 }));
+}
+
+/** Tiny groan (when a leader gets outbid): two detuned saws sliding down. */
+export function playGroan() {
+  const a = audio();
+  if (!a) return;
+  const t = a.currentTime;
+  for (const [start, peak] of [[300, 0.2], [305, 0.13]] as const) {
+    const osc = a.createOscillator();
+    const g = a.createGain();
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(start, t);
+    osc.frequency.exponentialRampToValueAtTime(118, t + 0.5);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(peak, t + 0.06);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
+    osc.connect(g);
+    g.connect(a.destination);
+    osc.start(t);
+    osc.stop(t + 0.56);
+  }
+}
+
 /** Reactive mute state for the toggle UI; the cue functions read isMuted() directly. */
 export function useMuted(): [boolean, () => void] {
   const [muted, setM] = useState(false);
