@@ -1,188 +1,156 @@
 # Realtime Auction Room
 
-A realtime IPL-style auction room. An admin runs a room, players are shown one at a time, bidder teams bid live against a countdown, and each player is sold to the top bidder or marked unsold — ending on a results page. Flow: **LOBBY → AUCTION → COMPLETED**.
+An IPL-style live auction room: an admin runs a room, players come up one at a time, bidder teams bid live against a server-authoritative countdown, and each player is sold to the top bidder or marked unsold — ending on a results page. Flow: **LOBBY → AUCTION → COMPLETED**.
+
+![Live auction screen](docs/live-auction.png)
+![Projector / broadcast view](docs/projector.png)
 
 ## Live Demo
 
-> Live URL: _to be filled after deployment_
+**https://auction-room-gamma.vercel.app** — log in with a demo account below.
 
 ## Demo Credentials
 
-All accounts use the password `auction123`.
+All accounts use the password **`auction123`**.
 
 | Email | Role | Team |
 |-------|------|------|
-| `admin@demo.test` | Auction Admin (runs the auction, does not bid) | — |
+| `admin@demo.test` | Auction admin — runs auctions, **does not bid** | — |
 | `team1@demo.test` | Bidder | Mumbai Mavericks |
 | `team2@demo.test` | Bidder | Chennai Chargers |
 | `team3@demo.test` | Bidder | Bangalore Blasters |
 
-Two demo rooms are seeded with `is_demo = true`, so they appear on **every** logged-in user's dashboard without joining:
+Once logged in, two seeded demo rooms (**DEMO01** + **DEMO02**) are visible to every user on the dashboard — no join code needed.
 
-- **DEMO01** — live lobby with 10 players and the 3 teams already joined. Start it and bid.
-- **DEMO02** — a completed auction; opens straight to a populated results page.
+### Try it in 2 minutes
 
-**To see realtime in action:** open the app in two browser windows and log in as `team1` and `team2`. In a third window (or the same browser), log in as `admin`, open **DEMO01**, and click **Start Auction**. As the two teams bid, the current player, countdown, highest bid, bid history, and budgets update live in every window with no manual refresh. Fire two bids at the same instant to confirm exactly one wins.
+1. Log in as **`admin@demo.test`** in one window, open **DEMO01**, and click **Start auction**.
+2. Log in as **`team1@demo.test`** and **`team2@demo.test`** in two other windows, open DEMO01, and bid against each other — current player, timer, highest bid, history and budgets update live in every window.
+3. Open **DEMO02** for a finished auction: the **results page** (squads, awards, stat callouts) and the public **share link**.
 
 ## Tech Stack
 
-- **Next.js 16** (App Router, TypeScript), deployed on **Vercel**
-- **Supabase** — Postgres + Auth (email/password) + Realtime (Postgres Changes)
-- **Tailwind CSS v4** + **shadcn/ui** (Base UI) + **lucide-react**
-- **Zod** for input validation
-- **@supabase/ssr** for cookie-based auth sessions
+- **Next.js 15** (App Router, TypeScript), deployed on **Vercel**
+- **Tailwind CSS v4** + **shadcn/ui**
+- **Supabase** — Postgres + Auth (email/password) + Realtime
+- **Vercel** hosting (serverless; no custom server we run)
 
 ## Features
 
-Mapped to the assignment:
-
-- Create a room (name, currency, budget, timer, players)
-- Join a room by code
-- Admin and participant (team) roles
-- Player list per room
-- Start the auction
-- Current player display, one lot at a time
-- Countdown timer with anti-snipe (a bid under 10s left extends the clock to 10s)
-- Realtime bidding
-- Live bid history
-- Sold / unsold resolution
-- Final results page (player → team → price, per-team squads, totals)
-- Room state persistence (state lives in Postgres; reopening a room resumes exactly where it was)
-
-Beyond the brief:
-
-- **Tiered, admin-set bid increments** — the step is derived from the current price, not a flat number
-- **Per-room currency label** — a display-only label (`₹`, `$`); all amounts stored as raw integers
-- **Team budgets** — enforced server-side; a bid can't exceed remaining budget
-- **Public demo rooms** — visible to every logged-in user
-- **Live Now + watch view** — the dashboard lists every in-progress auction (host, current player, live "X watching" count) to all logged-in users; anyone can open a room's read-only watch / cast view at `/rooms/[code]/projector` (huge player card, bid, timer, purses, bid history + commentary) — the same view doubles as the big-screen/projector cast. Active rooms are watchable by non-members; joining as a team still only works in the lobby.
+- Email/password **auth** with profiles
+- **Create / join** rooms (by code), with **admin vs. bidder** roles (the admin never bids)
+- **Live atomic bidding** — concurrent bids resolve to exactly one winner
+- **Server-authoritative, synced countdown timer** (no client clock drift)
+- **Anti-snipe** — a late bid extends the clock
+- **Tiered, admin-set bid increments** (step scales with the current price)
+- **Team budgets** + an optional **max squad-size cap**, both enforced server-side
+- **Sold / unsold** resolution per player
+- **Round 2 re-auction** — reopen unsold players at reduced base prices
+- **Results page** — per-team squads, totals, **awards**, and templated **squad reports**
+- **Live voice auctioneer** + on-screen **commentary feed**
+- **Projector / broadcast view** — a read-only big-screen cast of any live room
+- **Live Now** — dashboard list of all in-progress public auctions
+- **Public / private rooms** — public rooms are watchable by anyone; private stay members-only
+- **CSV** player import (create/lobby) and results **export**
+- Live **emoji reactions**
+- Public **read-only share link** for finished results (no login)
+- **Profile** — career stats + change password
 
 ## Architecture
 
-The app is a Next.js App Router project with Supabase Postgres as the system of record:
+A Next.js App Router app on Vercel, with Supabase Postgres as the system of record. There is **no custom backend server we host** — Vercel runs serverless functions, and Postgres owns all state.
 
-- **Next.js** renders server components and route handlers, and uses server actions for auth and form flows.
-- **Supabase Postgres** holds all auction state and is the single source of truth.
-- **All auction mutations go through `SECURITY DEFINER` Postgres functions** — this is the only write path. RLS blocks direct client writes to the auction tables, so a client cannot bypass the rules; it can only call the functions.
-- **The client mirrors state via Supabase Realtime** (Postgres Changes) and never owns authoritative state itself.
+```
+   Browser (Next.js client)
+     │  ▲
+ RPC │  │ realtime (postgres_changes: rooms, items, bids, participants)
+ (SECURITY DEFINER fns)
+     ▼  │
+   Supabase Postgres  ◄──────  Next.js on Vercel
+   auth · RLS · realtime         RSC · server actions · /api/cron/resolve
+   · auction functions
+```
 
-Clean separation of concerns:
-
-- `app/` — routes: `(auth)/login`, `(auth)/register`, `dashboard`, `rooms/[code]`, `api/cron/resolve`
-- `components/` — `ui/` (shadcn) plus feature components (player card, bid panel, bid history, timer, etc.)
-- `lib/` — Supabase clients (browser / server / middleware), auction RPC wrappers, shared types, hooks
-- `supabase/` — migrations, SQL tests, and the seed script
+**DB-as-authority:** all auction state lives in Postgres, and every mutation goes through a `SECURITY DEFINER` Postgres function. RLS blocks direct client writes to the auction tables, so the rules can't be bypassed — the client can only call the functions and mirror state via realtime.
 
 ## Realtime Design
 
-This is the core of the project. Vercel is serverless — there is no always-on process to own a countdown or resolve items — so the design is **DB-as-authority**:
+This is the core of the project. Vercel is serverless, so there is no always-on process to own a countdown — the design is DB-as-authority:
 
-- **The timer is a timestamp, not a process.** Each room has `rooms.item_ends_at` (timestamptz). The server never ticks. Clients render the countdown by comparing `item_ends_at` against an offset derived from `server_now()` fetched on mount, so client clock skew doesn't matter.
-- **Every bid and every resolution is one atomic Postgres function** that locks the room row (`SELECT ... FOR UPDATE`). Two clients bidding at the same instant are serialized by the database, so there is exactly one winner and budgets stay consistent. There is no app-layer write path to corrupt.
-- **Item resolution is idempotent and client-triggered** (the primary mechanism). When a client's countdown hits 0 it calls `resolve_current_item`, which finalizes the item (sold/unsold), advances to the next player or completes the room, and **no-ops if the item is already resolved**. Many clients calling at once → the first wins, the rest do nothing. This is what makes resolution feel instant.
-- **A daily Vercel Cron is a best-effort backstop only.** On the Vercel Hobby plan, cron runs at most once per day (`0 0 * * *`); per-minute cron is Pro-only. So cron is **not** the primary timing mechanism — it only sweeps items left expired in fully abandoned rooms.
-- **Supabase Realtime** (Postgres Changes on `rooms`, `items`, `bids`, `room_participants`) fans every change out to all subscribed clients, driving live bid history, current player, timer, budgets, and results.
-- **A focus + 4s poll refetch** is a safety net: if a realtime event is ever dropped, the next focus or poll re-reads state, so a client can never permanently desync.
+- **The DB is the source of truth.** Every bid and every resolution is **one atomic plpgsql function** that does `SELECT ... FOR UPDATE` on the room row. Simultaneous bids are serialized by Postgres → **exactly one winner**, budgets stay consistent, and there is no app-layer write path to corrupt.
+- **The timer is a timestamp, not a process.** Each room stores `item_ends_at`; clients render the countdown against a `server_now()` offset, so client clock skew doesn't matter.
+- **Resolution is idempotent + client-triggered.** When a client's countdown hits 0 it calls `resolve_current_item`, which finalizes the item and advances or completes the room, and **no-ops if already resolved** — many clients racing → the first wins. A **daily Vercel Cron** is a best-effort backstop for fully abandoned rooms only.
+- **Realtime via `postgres_changes`** fans every change out to subscribers (durable, replayable, survives reconnect); a focus + slow-poll refetch guarantees a client can never permanently desync.
+
+**Stress-tested:** `scripts/stress-bid.mjs` fires concurrent bids via `Promise.all`. Latest run — **121 concurrent bids → exactly one winner, budgets consistent, 0 anomalies.**
 
 ## Database Schema
 
-Five tables (see `supabase/migrations/0001_schema.sql`):
+Six tables (`supabase/migrations/`):
 
-- **`profiles`** — one row per auth user (`id` → `auth.users`), `display_name`. Auto-created on signup via a trigger.
-- **`rooms`** — `code`, `name`, `admin_id`, `status` (`lobby` | `active` | `paused` | `completed`), `current_item_id`, `item_ends_at` (authoritative deadline), `paused_remaining_ms`, `team_budget`, `currency` (display label), `increment_tiers` (jsonb), `timer_seconds`, `is_demo`.
-- **`room_participants`** — bidder **teams only** (the admin is never a participant). `room_id`, `user_id`, `team_name`, `budget_remaining`, unique per `(room_id, user_id)`.
-- **`items`** (players) — `room_id`, `name`, `role`, `country`, `base_price`, `image_url`, `order_index`, `status` (`pending` | `active` | `sold` | `unsold`), `sold_to`, `sold_price`.
-- **`bids`** — `room_id`, `item_id`, `participant_id`, `amount`, `created_at`.
+- **`profiles`** — one row per auth user (`display_name`), auto-created on signup.
+- **`rooms`** — `code`, `admin_id`, `status`, `current_item_id`, `item_ends_at`, `team_budget`, `currency` (display label), `increment_tiers`, `timer_seconds`, `round`, `is_public`, `max_players_per_team`, `share_token`.
+- **`room_participants`** — bidder **teams only** (`team_name`, `budget_remaining`); the admin is never a participant.
+- **`items`** (players) — `name`, `role`, `base_price`, `status` (`pending`/`active`/`sold`/`unsold`), `sold_to`, `sold_price`, `order_index`.
+- **`bids`** — `item_id`, `participant_id`, `amount`.
+- **`auction_events`** — append-only log of every beat (bid, sold, unsold, round_started…), for replay/analytics.
 
-Auction functions, the only write path (see `supabase/migrations/0003_functions.sql`):
+Key functions (the only write path; RLS forbids direct table writes):
 
-- `join_room` — validate and insert a participant by room code (admin can't join their own room as a team)
-- `place_bid` — validate caller is a bidder team (rejects the admin), room/item active and not expired, amount ≥ current + tier step, within budget; insert bid; apply anti-snipe
-- `start_auction` — admin only; `lobby → active`, activate the first player, set the timer
-- `resolve_current_item` — idempotent primary resolver; finalize the expired item and advance or complete
-- `admin_next_item`, `pause_auction`, `resume_auction`, `end_auction` — admin run controls
-- `tier_step` — helper that picks the highest tier whose `min_price ≤ current price`
-- `server_now` — authoritative server time for the client countdown offset
+- **`place_bid`** — validates team/active/not-expired, amount ≥ current + tier step, within budget, within the squad cap; inserts the bid and applies anti-snipe — all under the room lock.
+- **`resolve_current_item`** — idempotent resolver: finalize the expired player, then advance to the next or complete the room.
+- **`start_unsold_round`** — admin-only; reopen unsold players at reduced base prices for a new round.
 
-**RLS:** reads are scoped to viewable rooms via a `can_view_room()` helper (your own rooms plus any `is_demo` room); all writes go through the functions above — direct table writes are blocked.
+(Plus `join_room`, `start_auction`, `pause/resume/end_auction`, `admin_next_item`, `tier_step`, `server_now`.)
 
 ## AI Usage
 
-This project was built with AI assistance. See [`ai-transcripts/ai-usage-summary.md`](ai-transcripts/ai-usage-summary.md) for a summary of what AI helped with, the manual decisions made, and known limitations.
+Built with AI assistance — see [`ai-transcripts/ai-usage-summary.md`](ai-transcripts/ai-usage-summary.md) and the full session transcript [`ai-transcripts/claude-build-session-2026-06-30.md`](ai-transcripts/claude-build-session-2026-06-30.md).
 
 ## Running Locally
 
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
-2. Create a Supabase project.
-3. Run the SQL migrations in order — `supabase/migrations/0001` through `0004` — in the Supabase SQL editor, or with `supabase db push`.
-4. Copy the env template and fill it in:
-   ```bash
-   cp .env.example .env.local
-   ```
-5. Seed the demo data (accounts + DEMO01/DEMO02):
-   ```bash
-   node --env-file=.env.local scripts/seed.mjs
-   ```
-6. Start the dev server:
-   ```bash
-   npm run dev        # http://localhost:3000
-   ```
+```bash
+git clone <repo> && cd sumbittion
+npm install
+```
 
-> In the demo, set Supabase Auth **"Confirm email" to OFF** so signups are instant. (Seeded users are created pre-confirmed regardless.)
+1. Create a **Supabase** project.
+2. Run the SQL migrations in order (`supabase/migrations/0001` → `0012`) in the Supabase SQL editor, or `supabase db push`.
+3. Copy the env template and fill it in: `cp .env.example .env.local`
+4. Seed demo accounts + DEMO01/DEMO02: `node --env-file=.env.local scripts/seed.mjs`
+5. `npm run dev` → http://localhost:3000
+
+> Set Supabase Auth **“Confirm email” to OFF** for instant demo signups (seeded users are pre-confirmed regardless).
 
 ## Environment Variables
-
-Documented in `.env.example`.
 
 | Variable | Scope | Purpose |
 |----------|-------|---------|
 | `NEXT_PUBLIC_SUPABASE_URL` | client + server | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | client + server | Supabase anon key |
-| `SUPABASE_SERVICE_ROLE_KEY` | server only | Service role for the cron sweep and the seed script |
+| `SUPABASE_SERVICE_ROLE_KEY` | server only | Cron sweep + seed script (never exposed to the client) |
 | `CRON_SECRET` | server | Guards the `/api/cron/resolve` endpoint |
+
+## Assumptions
+
+- **Desktop-only** per the brief — responsiveness is not a goal.
+- All in-progress **public** rooms are watchable by any logged-in user; **private** rooms stay members-only in every state.
+- **Currency is a display label** (`₹`, `$`) — no real money and no conversion; amounts are raw integers.
+- Demo data (accounts + DEMO01/DEMO02) is **pre-seeded**.
+- **Precise timer resolution assumes at least one active client** in the room; the daily cron is the backstop for abandoned rooms.
 
 ## Known Limitations
 
-- **Precise resolution needs at least one active client in the room.** Resolution is driven by a live client's countdown. If a room is fully abandoned mid-item, the daily Vercel Hobby cron is the only backstop, so an abandoned item may resolve up to ~a day late. Live rooms always resolve instantly.
-- **Supabase Realtime free-tier limits** on connections and messages (fine for demo scale).
-- **Budgets are in-app units only** — no real money. `currency` is a display label, never converted.
-- **Desktop-only.** Per the assignment, responsiveness is not a requirement.
+- **Cron resolution is daily, best-effort** (Vercel Hobby) — a fully abandoned mid-item room may resolve up to ~a day late; live rooms always resolve instantly.
+- **Supabase free-tier realtime limits** on connections/messages (fine for demo scale).
+- **No real money** — budgets are in-app units only.
+- **Desktop-only.**
 
 ## Future Improvements
 
-- Per-minute cron, or a small always-on resolver service, on the Vercel Pro plan
-- Presence indicators (who's in the room)
-- Chat and reactions
-- Spectator mode
-- Player images
-- Squad / role caps per team
-
-## Test Instructions
-
-**SQL self-check (automated):** run `supabase/tests/auction_selfcheck.sql` in the Supabase SQL editor. It is rollback-safe (no permanent changes) and asserts:
-
-- tiered increments pick the correct step at different price points
-- the admin cannot bid
-- a sale decrements the winner's budget correctly
-- re-resolving an item is idempotent (one sale only)
-- a bid over budget is rejected (budget cap)
-- an item with no bids is marked unsold and the room completes
-
-**Manual two-window realtime test:** follow the steps under [Demo Credentials](#demo-credentials) — log in as `team1` and `team2` in two windows, have `admin` start **DEMO01**, and bid. Confirm the current player, timer, bid history, budgets, and results all update live, and that two simultaneous bids produce exactly one winner.
-
-**Concurrency stress test (automated):** `node --env-file=.env.local scripts/stress-bid.mjs [N]` provisions a pool of distinct authenticated bidders and fires `place_bid` at the same instant via `Promise.all`. It asserts the engine stays correct under simultaneous load:
-
-- many distinct bidders all bidding the **same** amount at once → **exactly one winner**, every other cleanly rejected, no double-accept, no crash
-- a burst across a spread of amounts → accepted bids are strictly increasing (no bid below the running max is ever accepted), over-budget bids rejected, no team over budget
-- many concurrent `resolve_current_item` calls → the item is **sold exactly once** (idempotent), the winner is charged once, no negative budgets
-
-Latest run:
-
-```
-RESULT: PASS — 121 concurrent same-amount bids -> exactly 1 winner, budgets consistent, 0 anomalies.
-```
-
-(The bidder count is bounded by Supabase's auth sign-in rate limit; sessions are cached so re-running accumulates a larger pool.)
+- **RTM** (right-to-match) and **proxy / max auto-bid**
+- **Per-category** squad caps
+- **Season-long leaderboard**, live predictions + leaderboards
+- **Auction replay** (the `auction_events` log is already stored)
+- **Horizontal scale-out** — a Redis pub/sub adapter or a per-auction queue
+- **Social login** + forgot-password
