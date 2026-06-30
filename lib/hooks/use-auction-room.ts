@@ -161,8 +161,10 @@ export function useAuctionRoom(initial: Initial, userId: string): AuctionState {
     }
     if (resolveRequestedFor.current === room.current_item_id) return;
     resolveRequestedFor.current = room.current_item_id;
-    // Small jitter so a packed room doesn't fire in perfect unison (still idempotent).
-    const jitter = 50 + Math.floor((endMs % 200));
+    // Small per-client RANDOM jitter so a packed room doesn't fire in perfect
+    // unison (endMs is identical on every client, so it staggered nothing). Resolve
+    // is idempotent — the first call wins, the rest no-op; this just spreads them.
+    const jitter = 50 + Math.floor(Math.random() * 200);
     const t = setTimeout(() => {
       resolveCurrentItem(roomId).catch(() => {
         resolveRequestedFor.current = null; // allow a retry on transient failure
