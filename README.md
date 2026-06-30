@@ -28,6 +28,8 @@ Once logged in, two seeded demo rooms (**DEMO01** + **DEMO02**) are visible to e
 2. Log in as **`team1@demo.test`** and **`team2@demo.test`** in two other windows, open DEMO01, and bid against each other — current player, timer, highest bid, history and budgets update live in every window.
 3. Open **DEMO02** for a finished auction: the **results page** (squads, awards, stat callouts) and the public **share link**.
 
+> You join a room as a team **in the lobby, before it starts**. Once an auction is live you can watch it but not join as a new team — so use the seeded team accounts (already in DEMO01) to bid.
+
 ## Tech Stack
 
 - **Next.js 15** (App Router, TypeScript), deployed on **Vercel**
@@ -105,17 +107,18 @@ Key functions (the only write path; RLS forbids direct table writes):
 
 ## AI Usage
 
-Built with AI assistance — see [`ai-transcripts/ai-usage-summary.md`](ai-transcripts/ai-usage-summary.md) and the full session transcript [`ai-transcripts/claude-build-session-2026-06-30.md`](ai-transcripts/claude-build-session-2026-06-30.md).
+Built with AI assistance — see [`ai-transcripts/ai-usage-summary.md`](ai-transcripts/ai-usage-summary.md) and the build session transcripts in [`ai-transcripts/`](ai-transcripts/).
 
 ## Running Locally
 
 ```bash
-git clone <repo> && cd sumbittion
+git clone https://github.com/Yashash4/realtime-auction-room.git
+cd realtime-auction-room
 npm install
 ```
 
 1. Create a **Supabase** project.
-2. Run the SQL migrations in order (`supabase/migrations/0001` → `0012`) in the Supabase SQL editor, or `supabase db push`.
+2. Run the SQL migrations in order (`supabase/migrations/0001` → `0013`) in the Supabase SQL editor, or `supabase db push`.
 3. Copy the env template and fill it in: `cp .env.example .env.local`
 4. Seed demo accounts + DEMO01/DEMO02: `node --env-file=.env.local scripts/seed.mjs`
 5. `npm run dev` → http://localhost:3000
@@ -130,6 +133,12 @@ npm install
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | client + server | Supabase anon key |
 | `SUPABASE_SERVICE_ROLE_KEY` | server only | Cron sweep + seed script (never exposed to the client) |
 | `CRON_SECRET` | server | Guards the `/api/cron/resolve` endpoint |
+
+## Test Instructions
+
+- **Manual (2 minutes):** follow the [Try it in 2 minutes](#try-it-in-2-minutes) walkthrough — start DEMO01 as admin, bid from two team windows, and watch every screen update live; open DEMO02 for the results + share page.
+- **SQL self-checks:** the rollback-safe scripts in [`supabase/tests/`](supabase/tests/) assert the engine's invariants (tiered increments, admin-can't-bid, idempotent resolve, budget + squad caps, Round 2 prices, per-item rate limit, and that a private room is invisible to non-members). Run any of them in the Supabase SQL editor — each ends in `ALL CHECKS PASSED`.
+- **Concurrency stress test:** `node --env-file=.env.local scripts/stress-bid.mjs` fires many simultaneous `place_bid` calls via `Promise.all`. Latest run — **121 concurrent bids → exactly one winner, budgets consistent, 0 anomalies.**
 
 ## Assumptions
 
