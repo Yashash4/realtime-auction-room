@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Copy, Radio } from "lucide-react";
+import { ArrowLeft, Copy, Eye, Radio } from "lucide-react";
 import { useAuctionRoom } from "@/lib/hooks/use-auction-room";
 import type { Bid, Item, Participant, Room } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { LobbyView } from "@/components/room/lobby-view";
 import { AuctionView } from "@/components/room/auction-view";
 import { CompletedView } from "@/components/room/completed-view";
+import { SoldOverlay, type SoldEvent } from "@/components/room/sold-overlay";
 
 export function AuctionRoom({
   initial,
@@ -19,7 +21,7 @@ export function AuctionRoom({
   userId: string;
   isAdmin: boolean;
 }) {
-  const { room, items, participants, bids, conn, nowMs } = useAuctionRoom(initial);
+  const { room, items, participants, bids, conn, nowMs, watching } = useAuctionRoom(initial, userId);
 
   const myParticipant = participants.find((p) => p.user_id === userId) ?? null;
   const currentItem = items.find((i) => i.id === room.current_item_id) ?? null;
@@ -28,6 +30,30 @@ export function AuctionRoom({
         .filter((b) => b.item_id === currentItem.id)
         .sort((a, b) => b.amount - a.amount || b.created_at.localeCompare(a.created_at))
     : [];
+
+  // Detect a player resolving (sold/unsold) and fire the celebratory overlay.
+  // Pre-existing resolved items (e.g. reopening a finished room) are not celebrated.
+  const celebrated = useRef<Set<string> | null>(null);
+  const [soldEvent, setSoldEvent] = useState<SoldEvent | null>(null);
+  useEffect(() => {
+    const resolved = items.filter((i) => i.status === "sold" || i.status === "unsold");
+    if (celebrated.current === null) {
+      celebrated.current = new Set(resolved.map((i) => i.id));
+      return;
+    }
+    const fresh = resolved.filter((i) => !celebrated.current!.has(i.id));
+    if (fresh.length === 0) return;
+    fresh.forEach((i) => celebrated.current!.add(i.id));
+    const latest = fresh.sort((a, b) => b.order_index - a.order_index)[0];
+    setSoldEvent({
+      key: Date.now(),
+      item: latest,
+      teamName: participants.find((p) => p.id === latest.sold_to)?.team_name ?? null,
+      currency: room.currency,
+    });
+  }, [items, participants, room.currency]);
+
+  const clearSold = useCallback(() => setSoldEvent(null), []);
 
   const copyCode = () => {
     navigator.clipboard.writeText(room.code).then(
@@ -55,6 +81,10 @@ export function AuctionRoom({
             {isAdmin && (
               <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">Admin</span>
             )}
+            <span className="flex items-center gap-1.5 text-xs text-muted-foreground" title="People in this room">
+              <Eye className="size-3.5" />
+              {watching} watching
+            </span>
             <span
               className="flex items-center gap-1.5 text-xs text-muted-foreground"
               title={`Realtime: ${conn}`}
@@ -89,6 +119,8 @@ export function AuctionRoom({
           />
         )}
       </main>
+
+      <SoldOverlay event={soldEvent} onDone={clearSold} />
     </div>
   );
 }

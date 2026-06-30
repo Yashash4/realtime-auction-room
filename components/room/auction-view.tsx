@@ -1,5 +1,8 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import { AlertTriangle, Timer, Trophy } from "lucide-react";
 import type { Bid, Item, Participant, Room } from "@/lib/types";
 import { formatMoney } from "@/lib/format";
 import { PlayerCard } from "@/components/room/player-card";
@@ -31,11 +34,47 @@ export function AuctionView({
 
   const paused = room.status === "paused";
   const endMs = room.item_ends_at ? new Date(room.item_ends_at).getTime() : 0;
-  const msRemaining = paused
-    ? (room.paused_remaining_ms ?? 0)
-    : Math.max(0, endMs - nowMs);
+  const msRemaining = paused ? (room.paused_remaining_ms ?? 0) : Math.max(0, endMs - nowMs);
   const totalMs = room.timer_seconds * 1000;
   const open = room.status === "active" && msRemaining > 0;
+
+  // Am I winning / outbid on this player?
+  const iAmHighest = !!myParticipant && highest?.participant_id === myParticipant.id;
+  const iBidThisItem = !!myParticipant && itemBids.some((b) => b.participant_id === myParticipant.id);
+  const myStatus: "winning" | "outbid" | null =
+    isAdmin || !myParticipant ? null : iAmHighest ? "winning" : iBidThisItem ? "outbid" : null;
+
+  // Toast when I lose the lead I previously held (per item).
+  const prevWinning = useRef<{ id: string | null; winning: boolean }>({ id: null, winning: false });
+  useEffect(() => {
+    const id = currentItem?.id ?? null;
+    if (prevWinning.current.id === id && prevWinning.current.winning && !iAmHighest && iBidThisItem) {
+      toast.error("You've been outbid!");
+    }
+    prevWinning.current = { id, winning: iAmHighest };
+  }, [iAmHighest, iBidThisItem, currentItem?.id]);
+
+  // Anti-snipe feedback: the timer was bumped forward for the SAME active player
+  // (and we weren't just resuming from pause) -> a late bid extended the clock.
+  const [extended, setExtended] = useState(false);
+  const prevEnds = useRef<{ id: string | null; ends: number; status: string }>({ id: null, ends: 0, status: "" });
+  useEffect(() => {
+    const id = currentItem?.id ?? null;
+    const prev = prevEnds.current;
+    if (
+      prev.id === id &&
+      prev.status === "active" &&
+      room.status === "active" &&
+      endMs > prev.ends + 500
+    ) {
+      toast.info("Time extended — a late bid!", { icon: "⏱" });
+      setExtended(true);
+      const t = setTimeout(() => setExtended(false), 1800);
+      prevEnds.current = { id, ends: endMs, status: room.status };
+      return () => clearTimeout(t);
+    }
+    prevEnds.current = { id, ends: endMs, status: room.status };
+  }, [endMs, currentItem?.id, room.status]);
 
   if (!currentItem) {
     return <p className="py-20 text-center text-muted-foreground">Loading current player…</p>;
@@ -51,7 +90,16 @@ export function AuctionView({
             </span>
           )}
           <PlayerCard item={currentItem} currency={room.currency} />
-          <TimerRing msRemaining={msRemaining} totalMs={totalMs} paused={paused} />
+
+          <div className="relative">
+            <TimerRing msRemaining={msRemaining} totalMs={totalMs} paused={paused} />
+            {extended && (
+              <span className="absolute -top-1 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full bg-amber-500 px-2.5 py-1 text-xs font-semibold text-white shadow-lg duration-300 animate-in fade-in slide-in-from-bottom-1">
+                <Timer className="size-3" /> +time
+              </span>
+            )}
+          </div>
+
           <div className="text-center">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Current bid</p>
             <p className="mt-1 text-3xl font-bold tabular-nums">
@@ -62,6 +110,17 @@ export function AuctionView({
             </p>
           </div>
         </div>
+
+        {myStatus === "winning" && (
+          <div className="flex items-center justify-center gap-2 rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-2.5 text-sm font-semibold text-green-600 duration-200 animate-in fade-in dark:text-green-400">
+            <Trophy className="size-4" /> You&apos;re winning this player
+          </div>
+        )}
+        {myStatus === "outbid" && (
+          <div className="flex items-center justify-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-sm font-semibold text-destructive duration-200 animate-in fade-in">
+            <AlertTriangle className="size-4" /> You&apos;ve been outbid
+          </div>
+        )}
 
         <BidPanel
           room={room}

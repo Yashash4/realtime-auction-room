@@ -15,6 +15,8 @@ export type AuctionState = {
   conn: ConnStatus;
   /** Server-aligned current time in ms, ticking ~4x/sec. */
   nowMs: number;
+  /** Distinct users currently present in the room (via realtime presence). */
+  watching: number;
 };
 
 type Initial = {
@@ -34,7 +36,7 @@ const byOrder = (a: Item, b: Item) => a.order_index - b.order_index;
  * room.item_ends_at against a server-time offset, and when it expires this hook
  * fires the idempotent resolve_current_item RPC (safe if many clients race).
  */
-export function useAuctionRoom(initial: Initial): AuctionState {
+export function useAuctionRoom(initial: Initial, userId: string): AuctionState {
   const supabase = useMemo(() => createClient(), []);
   const roomId = initial.room.id;
 
@@ -44,6 +46,7 @@ export function useAuctionRoom(initial: Initial): AuctionState {
   const [bids, setBids] = useState<Bid[]>(initial.bids);
   const [conn, setConn] = useState<ConnStatus>("connecting");
   const [nowMs, setNowMs] = useState<number>(() => Date.now());
+  const [watching, setWatching] = useState(1);
 
   const offsetRef = useRef(0); // serverNow - clientNow, in ms
   const resolveRequestedFor = useRef<string | null>(null);
@@ -92,8 +95,14 @@ export function useAuctionRoom(initial: Initial): AuctionState {
         prev.some((p) => p.id === row.id) ? prev.map((p) => (p.id === row.id ? row : p)) : [...prev, row],
       );
 
-    const channel = supabase
-      .channel(`room:${roomId}`)
+    const channel = supabase.channel(`room:${roomId}`, {
+      config: { presence: { key: userId } },
+    });
+    channel
+      .on("presence", { event: "sync" }, () => {
+        // presenceState is keyed by user id -> distinct watchers (multiple tabs = one).
+        setWatching(Object.keys(channel.presenceState()).length || 1);
+      })
       .on("postgres_changes", { event: "*", schema: "public", table: "rooms", filter: `id=eq.${roomId}` }, (p) => {
         if (p.new && Object.keys(p.new).length) setRoom(p.new as Room);
       })
@@ -114,6 +123,7 @@ export function useAuctionRoom(initial: Initial): AuctionState {
         if (status === "SUBSCRIBED") {
           setConn("live");
           void refetch(); // resync snapshot on connect/reconnect
+          void channel.track({ at: Date.now() }); // announce presence
         } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
           setConn("error");
         }
@@ -122,7 +132,7 @@ export function useAuctionRoom(initial: Initial): AuctionState {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [supabase, roomId, refetch]);
+  }, [supabase, roomId, refetch, userId]);
 
   // Resilience net: realtime is the fast path, but a dropped or delayed event
   // must never leave a client permanently desynced. Re-sync on tab focus and on
@@ -161,5 +171,5 @@ export function useAuctionRoom(initial: Initial): AuctionState {
     return () => clearTimeout(t);
   }, [room.status, room.item_ends_at, room.current_item_id, nowMs, roomId]);
 
-  return { room, items, participants, bids, conn, nowMs };
+  return { room, items, participants, bids, conn, nowMs, watching };
 }
