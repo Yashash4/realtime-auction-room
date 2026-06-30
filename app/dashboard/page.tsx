@@ -20,7 +20,9 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const select = "id, code, name, status, admin_id, is_demo, items(count)";
+  // Disambiguate the embed: rooms has TWO relationships to items (items.room_id
+  // and rooms.current_item_id), so PostgREST needs the explicit FK to count players.
+  const select = "id, code, name, status, admin_id, is_demo, items!items_room_id_fkey(count)";
 
   // Rooms I host, rooms I joined as a team, and the public demo rooms.
   const [{ data: hosted }, { data: memberships }, { data: demos }] = await Promise.all([
