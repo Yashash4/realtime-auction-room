@@ -5,7 +5,7 @@ import confetti from "canvas-confetti";
 import { Gavel, XCircle } from "lucide-react";
 import type { Item } from "@/lib/types";
 import { formatMoney } from "@/lib/format";
-import { playGavel } from "@/lib/sound";
+import { playFanfare, playGavel } from "@/lib/sound";
 
 export type SoldEvent = {
   key: number; // unique per event so the effect re-fires
@@ -28,6 +28,7 @@ export function SoldOverlay({ event, onDone }: { event: SoldEvent | null; onDone
 
     if (sold) {
       playGavel();
+      playFanfare();
       const fire = () =>
         confetti({
           particleCount: 70,

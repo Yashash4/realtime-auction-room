@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Copy, Eye, Radio } from "lucide-react";
+import { ArrowLeft, Copy, Eye, Radio, Volume2, VolumeX } from "lucide-react";
 import { useAuctionRoom } from "@/lib/hooks/use-auction-room";
+import { useMuted } from "@/lib/sound";
 import type { Bid, Item, Participant, Room } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { LobbyView } from "@/components/room/lobby-view";
@@ -54,6 +55,7 @@ export function AuctionRoom({
   }, [items, participants, room.currency]);
 
   const clearSold = useCallback(() => setSoldEvent(null), []);
+  const [muted, toggleMuted] = useMuted();
 
   const copyCode = () => {
     navigator.clipboard.writeText(room.code).then(
@@ -85,6 +87,15 @@ export function AuctionRoom({
               <Eye className="size-3.5" />
               {watching} watching
             </span>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={toggleMuted}
+              aria-label={muted ? "Unmute sounds" : "Mute sounds"}
+              title={muted ? "Unmute sounds" : "Mute sounds"}
+            >
+              {muted ? <VolumeX className="size-4 text-muted-foreground" /> : <Volume2 className="size-4" />}
+            </Button>
             <span
               className="flex items-center gap-1.5 text-xs text-muted-foreground"
               title={`Realtime: ${conn}`}

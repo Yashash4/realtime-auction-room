@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { AlertTriangle, Timer, Trophy } from "lucide-react";
 import type { Bid, Item, Participant, Room } from "@/lib/types";
 import { formatMoney } from "@/lib/format";
+import { playBeep } from "@/lib/sound";
 import { PlayerCard } from "@/components/room/player-card";
 import { TimerRing } from "@/components/room/timer-ring";
 import { BidPanel } from "@/components/room/bid-panel";
@@ -75,6 +76,20 @@ export function AuctionView({
     }
     prevEnds.current = { id, ends: endMs, status: room.status };
   }, [endMs, currentItem?.id, room.status]);
+
+  // Soft beep once per second in the final 5s (gated by the mute toggle inside playBeep).
+  const lastBeep = useRef(-1);
+  useEffect(() => {
+    if (room.status !== "active") {
+      lastBeep.current = -1;
+      return;
+    }
+    const secs = Math.ceil(msRemaining / 1000);
+    if (secs >= 1 && secs <= 5 && secs !== lastBeep.current) {
+      lastBeep.current = secs;
+      playBeep();
+    }
+  }, [msRemaining, room.status]);
 
   if (!currentItem) {
     return <p className="py-20 text-center text-muted-foreground">Loading current player…</p>;
