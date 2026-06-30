@@ -1,8 +1,9 @@
 "use client";
 
-import { Trophy } from "lucide-react";
+import { Download, Trophy } from "lucide-react";
 import type { Item, Participant, Room } from "@/lib/types";
 import { formatMoney } from "@/lib/format";
+import { Button } from "@/components/ui/button";
 
 export function CompletedView({
   room,
@@ -35,6 +36,14 @@ export function CompletedView({
         <p className="text-sm text-muted-foreground">
           {sold.length} sold · {unsold.length} unsold
         </p>
+        <Button
+          variant="outline"
+          className="mt-2"
+          render={<a href={`/api/rooms/${room.code}/results`} />}
+        >
+          <Download />
+          Download CSV
+        </Button>
       </div>
 
       <section className="space-y-3">
