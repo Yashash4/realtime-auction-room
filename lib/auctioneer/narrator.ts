@@ -12,6 +12,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { isMuted } from "@/lib/sound";
 import type { BeatCategory } from "@/lib/auctioneer/lines";
+import { pickBestVoice } from "@/lib/auctioneer/voice-score";
 
 const VKEY = "auction:voice";
 const CFG_KEY = "auction:voicecfg";
@@ -110,14 +111,9 @@ function findVoice(): SpeechSynthesisVoice | null {
   const wanted = getVoiceConfig().voiceURI;
   if (wanted) {
     const v = voices.find((x) => x.voiceURI === wanted);
-    if (v) return v;
+    if (v) return v; // explicit user choice always wins
   }
-  const prefs = ["en-in", "en-gb", "en-au", "en-us", "en"];
-  for (const p of prefs) {
-    const v = voices.find((x) => x.lang?.toLowerCase().startsWith(p));
-    if (v) return v;
-  }
-  return voices[0];
+  return pickBestVoice(voices); // default: smooth neural/online English when available
 }
 
 function estimateMs(text: string) {
@@ -156,7 +152,7 @@ function deliver(b: Beat, onDone: () => void) {
       const v = findVoice();
       if (v) u.voice = v;
       u.rate = Math.min(1.6, cfg.rate * (b.priority === "critical" ? 1.06 : 1));
-      u.pitch = b.priority === "critical" ? 1.12 : 1.02;
+      u.pitch = 1.0; // normal pitch — confident, not warbly
       u.volume = cfg.volume;
       u.onend = finish;
       u.onerror = finish;
