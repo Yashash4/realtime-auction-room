@@ -2,11 +2,20 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Download, RotateCcw, Share2, Trophy } from "lucide-react";
+import { Banknote, Crown, Download, PiggyBank, RotateCcw, Share2, Tag, Trophy, Users, type LucideIcon } from "lucide-react";
 import type { Item, Participant, Room } from "@/lib/types";
 import { formatMoney } from "@/lib/format";
 import { startUnsoldRound } from "@/lib/auction";
+import { buildResultsReport, type Award } from "@/lib/squad-report";
 import { Button } from "@/components/ui/button";
+
+const AWARD_ICON: Record<Award["icon"], LucideIcon> = {
+  spender: Banknote,
+  players: Users,
+  priciest: Crown,
+  value: Tag,
+  budget: PiggyBank,
+};
 
 export function CompletedView({
   room,
@@ -50,6 +59,10 @@ export function CompletedView({
     })
     .sort((a, b) => b.spent - a.spent);
 
+  // Derived (no API): one-line summary, awards board, per-team recaps.
+  const report = buildResultsReport(room, items, participants);
+  const recapByTeam = new Map(report.reports.map((r) => [r.teamId, r.text]));
+
   return (
     <div className="mx-auto max-w-4xl space-y-8">
       <div className="flex flex-col items-center gap-2 text-center">
@@ -62,9 +75,7 @@ export function CompletedView({
             After Round {room.round}
           </span>
         )}
-        <p className="text-sm text-muted-foreground">
-          {sold.length} sold · {unsold.length} unsold
-        </p>
+        <p className="max-w-xl text-sm text-muted-foreground">{report.summary}</p>
         <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
           <Button variant="outline" render={<a href={`/api/rooms/${room.code}/results`} />}>
             <Download />
@@ -82,6 +93,29 @@ export function CompletedView({
           )}
         </div>
       </div>
+
+      {report.awards.length > 0 && (
+        <section className="space-y-3">
+          <h3 className="font-medium">Awards</h3>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {report.awards.map((a) => {
+              const Icon = AWARD_ICON[a.icon];
+              return (
+                <div key={a.label} className="rounded-xl border bg-card p-4">
+                  <div className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-muted-foreground">
+                    <Icon className="size-3.5 text-primary" /> {a.label}
+                  </div>
+                  <p className="mt-2 font-semibold leading-tight">{a.winner}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {a.value}
+                    {a.sub ? ` · ${a.sub}` : ""}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       <section className="space-y-3">
         <h3 className="font-medium">Results</h3>
@@ -141,6 +175,9 @@ export function CompletedView({
                   ))}
                 </ul>
               )}
+              <p className="mt-3 border-t pt-3 text-sm italic leading-relaxed text-muted-foreground">
+                {recapByTeam.get(team.id)}
+              </p>
             </div>
           ))}
         </div>
