@@ -19,7 +19,8 @@ export type BeatCategory =
   | "milestone_record"
   | "milestone_crore"
   | "lull"
-  | "spree";
+  | "spree"
+  | "round_started";
 
 const POOLS: Record<BeatCategory, string[]> = {
   welcome: [
@@ -128,6 +129,11 @@ const POOLS: Record<BeatCategory, string[]> = {
     "{team} just can't stop buying!",
     "Someone stop {team} — they're loading up!",
   ],
+  round_started: [
+    "Round {round}! The unsold players are back — at reduced prices!",
+    "Here we go again — Round {round}! The ones nobody wanted, now going cheap!",
+    "Round {round} begins! Second chances at lower bases — who'll pounce this time?",
+  ],
 };
 
 const lastIdx: Partial<Record<BeatCategory, number>> = {};
@@ -141,7 +147,7 @@ function pick(cat: BeatCategory): string {
 }
 
 export type LineVars = Partial<
-  Record<"player" | "desc" | "team" | "amount" | "base" | "step" | "count", string>
+  Record<"player" | "desc" | "team" | "amount" | "base" | "step" | "count" | "round", string>
 >;
 
 export function renderLine(cat: BeatCategory, vars: LineVars): string {

@@ -67,6 +67,23 @@ export function useAuctioneer(args: {
     });
   });
 
+  // Round 2+: unsold players reopened at reduced prices. Re-arm the per-round
+  // refs so reopened items re-announce and the wrap bookend fires again at the
+  // next finish. Declared BEFORE the new-player effect so the announcedItemId
+  // reset lands first when a reopened item carries the same id.
+  const prevRound = useRef(room.round);
+  useEffect(() => {
+    if (room.round <= prevRound.current) {
+      prevRound.current = room.round;
+      return;
+    }
+    prevRound.current = room.round;
+    announcedItemId.current = null;
+    resolved.current = null;
+    wrapSaid.current = false;
+    narrate({ category: "round_started", priority: "critical", text: renderLine("round_started", { round: String(room.round) }) });
+  }, [room.round]);
+
   // Welcome bookend + new player on the block.
   useEffect(() => {
     if (room.status !== "active" || !currentItem) return;
