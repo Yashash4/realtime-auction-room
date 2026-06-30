@@ -41,6 +41,9 @@ export function AuctionRoom({
     if (it.status === "sold" && it.sold_to) soldByTeam.set(it.sold_to, (soldByTeam.get(it.sold_to) ?? 0) + 1);
   }
 
+  // Position of the player on the block, for the "Player N of M" progress line.
+  const itemProgress = { index: items.findIndex((i) => i.id === room.current_item_id), total: items.length };
+
   // Detect a player resolving (sold/unsold) and fire the celebratory overlay.
   // Pre-existing resolved items (e.g. reopening a finished room) are not celebrated.
   const celebrated = useRef<Set<string> | null>(null);
@@ -177,6 +180,7 @@ export function AuctionRoom({
             isAdmin={isAdmin}
             myParticipant={myParticipant}
             soldByTeam={soldByTeam}
+            itemProgress={itemProgress}
             nowMs={nowMs}
           />
         )}

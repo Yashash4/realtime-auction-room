@@ -2,6 +2,7 @@
 
 import type { Participant } from "@/lib/types";
 import { formatAmount } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 export function TeamBudgets({
   participants,
@@ -29,14 +30,20 @@ export function TeamBudgets({
       ) : (
         <ul className="divide-y">
           {sorted.map((p) => (
-            <li key={p.id} className="flex items-center justify-between px-4 py-2.5 text-sm">
+            <li
+              key={p.id}
+              className={cn(
+                "flex items-center justify-between border-l-2 border-transparent px-4 py-2.5 text-sm transition-colors",
+                p.id === highlightId && "border-l-primary bg-primary/10",
+              )}
+            >
               <span className="flex items-center gap-2">
                 <span className="truncate font-medium">{p.team_name}</span>
                 {p.id === myParticipantId && (
                   <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">you</span>
                 )}
                 {p.id === highlightId && (
-                  <span className="rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] text-emerald-400">
+                  <span className="rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-medium text-primary">
                     leading
                   </span>
                 )}

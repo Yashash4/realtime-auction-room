@@ -81,15 +81,15 @@ export function BidPanel({
 
   return (
     <Panel>
-      <div className="flex items-center justify-between text-sm">
+      <div className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm">
         <span className="text-muted-foreground">Your budget</span>
-        <span className="font-medium tabular-nums">{formatAmount(budget, room.currency)}</span>
+        <span className="font-semibold tabular-nums">{formatAmount(budget, room.currency)}</span>
       </div>
 
       {cap > 0 && (
-        <div className="flex items-center justify-between text-sm">
+        <div className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm">
           <span className="text-muted-foreground">Your squad</span>
-          <span className={`font-medium tabular-nums ${squadFull ? "text-amber-500" : ""}`}>
+          <span className={`font-semibold tabular-nums ${squadFull ? "text-amber-400" : ""}`}>
             {myOwned} / {cap} players
           </span>
         </div>
@@ -149,5 +149,5 @@ export function BidPanel({
 }
 
 function Panel({ children }: { children: React.ReactNode }) {
-  return <div className="space-y-3 rounded-xl border bg-card p-4">{children}</div>;
+  return <div className="space-y-3 rounded-xl border bg-card p-4 shadow-lg">{children}</div>;
 }

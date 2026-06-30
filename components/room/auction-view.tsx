@@ -23,6 +23,7 @@ export function AuctionView({
   isAdmin,
   myParticipant,
   soldByTeam,
+  itemProgress,
   nowMs,
 }: {
   room: Room;
@@ -32,6 +33,7 @@ export function AuctionView({
   isAdmin: boolean;
   myParticipant: Participant | null;
   soldByTeam: Map<string, number>;
+  itemProgress: { index: number; total: number }; // 0-based index of the current player
   nowMs: number;
 }) {
   const teamNameById = new Map(participants.map((p) => [p.id, p.team_name]));
@@ -102,7 +104,7 @@ export function AuctionView({
   return (
     <div className="mx-auto grid max-w-5xl gap-6 lg:grid-cols-[1fr_320px]">
       <div className="space-y-6">
-        <div className="flex flex-col items-center gap-6 rounded-xl border bg-card p-8">
+        <div className="flex flex-col items-center gap-6 rounded-2xl border bg-gradient-to-b from-card to-card/60 p-8 shadow-xl">
           {room.round > 1 && (
             <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
               Round {room.round} · unsold players
@@ -113,6 +115,13 @@ export function AuctionView({
               Paused by admin
             </span>
           )}
+
+          {itemProgress.index >= 0 && (
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Player {itemProgress.index + 1} of {itemProgress.total}
+            </p>
+          )}
+
           <PlayerCard item={currentItem} currency={room.currency} />
 
           <div className="relative">
@@ -124,25 +133,31 @@ export function AuctionView({
             )}
           </div>
 
-          <div className="text-center">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Current bid</p>
-            <p className="mt-1 text-3xl font-bold tabular-nums">
-              {formatAmount(highest?.amount ?? currentItem.base_price, room.currency)}
+          {/* Current bid zone — the loudest number on the screen. */}
+          <div className="w-full rounded-xl border border-primary/20 bg-primary/5 px-6 py-5 text-center">
+            <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Current bid</p>
+            <p className="mt-1 text-5xl font-black tabular-nums tracking-tight">
+              <span
+                key={highest?.amount ?? currentItem.base_price}
+                className="inline-block animate-bid-flash"
+              >
+                {formatAmount(highest?.amount ?? currentItem.base_price, room.currency)}
+              </span>
             </p>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="mt-2 text-sm text-muted-foreground">
               {highest ? `Leading: ${teamNameById.get(highest.participant_id) ?? "Team"}` : "No bids yet"}
             </p>
           </div>
         </div>
 
         {myStatus === "winning" && (
-          <div className="flex items-center justify-center gap-2 rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-2.5 text-sm font-semibold text-green-600 duration-200 animate-in fade-in dark:text-green-400">
-            <Trophy className="size-4" /> You&apos;re winning this player
+          <div className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-emerald-500/30 bg-emerald-500/15 px-4 py-3 text-base font-bold text-emerald-400 ring-2 ring-emerald-500/30 animate-pulse duration-200">
+            <Trophy className="size-5" /> You&apos;re winning this player
           </div>
         )}
         {myStatus === "outbid" && (
-          <div className="flex items-center justify-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-sm font-semibold text-destructive duration-200 animate-in fade-in">
-            <AlertTriangle className="size-4" /> You&apos;ve been outbid
+          <div className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-destructive/30 bg-destructive/10 px-4 py-3 text-base font-bold text-destructive ring-2 ring-destructive/30 animate-pulse duration-200">
+            <AlertTriangle className="size-5" /> You&apos;ve been outbid
           </div>
         )}
 

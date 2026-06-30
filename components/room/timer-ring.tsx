@@ -1,6 +1,7 @@
 "use client";
 
 import { Pause } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 /** Circular countdown. msRemaining/totalMs drive the arc; shows whole seconds.
  *  className/numberClassName let callers scale it (e.g. the projector view). */
@@ -8,7 +9,7 @@ export function TimerRing({
   msRemaining,
   totalMs,
   paused = false,
-  className = "size-32",
+  className = "size-40",
   numberClassName = "text-3xl",
 }: {
   msRemaining: number;
@@ -25,9 +26,15 @@ export function TimerRing({
   const urgent = clamped <= 5000 && !paused;
 
   return (
-    <div className={`relative ${className}`}>
+    <div
+      className={cn(
+        "relative rounded-full transition-shadow duration-300",
+        urgent && "animate-pulse shadow-[0_0_40px_-4px] shadow-primary/60",
+        className,
+      )}
+    >
       <svg viewBox="0 0 120 120" className="size-full -rotate-90">
-        <circle cx="60" cy="60" r={R} fill="none" strokeWidth="8" className="stroke-muted" />
+        <circle cx="60" cy="60" r={R} fill="none" strokeWidth="8" className="stroke-muted/40" />
         <circle
           cx="60"
           cy="60"
@@ -41,7 +48,7 @@ export function TimerRing({
             paused
               ? "stroke-amber-500 transition-[stroke-dashoffset] duration-200"
               : urgent
-                ? "stroke-destructive transition-[stroke-dashoffset] duration-200"
+                ? "stroke-primary transition-[stroke-dashoffset] duration-200 drop-shadow-[0_0_6px_var(--color-primary)]"
                 : "stroke-primary transition-[stroke-dashoffset] duration-200"
           }
         />
@@ -51,7 +58,13 @@ export function TimerRing({
           <Pause className="size-1/3 text-amber-500" />
         ) : (
           <>
-            <span className={`font-bold tabular-nums ${numberClassName} ${urgent ? "text-destructive" : ""}`}>
+            <span
+              className={cn(
+                "font-bold tabular-nums text-foreground",
+                numberClassName,
+                urgent && "text-primary",
+              )}
+            >
               {seconds}
             </span>
             <span className="text-xs uppercase tracking-wide text-muted-foreground">seconds</span>
