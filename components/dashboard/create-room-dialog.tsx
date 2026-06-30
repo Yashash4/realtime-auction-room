@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { toast } from "sonner";
-import { Plus } from "lucide-react";
+import { ChevronDown, Plus } from "lucide-react";
 import { createRoom, type CreateRoomState } from "@/app/dashboard/actions";
 import { SAMPLE_PLAYERS_TEXT } from "@/lib/players";
 import { formatAmount } from "@/lib/format";
@@ -20,6 +20,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { TiersEditor } from "@/components/dashboard/tiers-editor";
 
 const inputClass =
@@ -64,12 +71,19 @@ export function CreateRoomDialog() {
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-2">
               <Label htmlFor="currency">Currency</Label>
-              <select id="currency" name="currency" value={currency} onChange={(e) => setCurrency(e.target.value)} className={inputClass}>
-                <option value="₹">₹</option>
-                <option value="$">$</option>
-                <option value="€">€</option>
-                <option value="£">£</option>
-              </select>
+              {/* base-ui Select doesn't emit a native form value; hidden input carries it to the action. */}
+              <input type="hidden" name="currency" value={currency} />
+              <Select value={currency} onValueChange={(v) => setCurrency(v ?? "₹")}>
+                <SelectTrigger id="currency" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="₹">₹</SelectItem>
+                  <SelectItem value="$">$</SelectItem>
+                  <SelectItem value="€">€</SelectItem>
+                  <SelectItem value="£">£</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="teamBudget">Team budget</Label>
@@ -82,14 +96,6 @@ export function CreateRoomDialog() {
               <Label htmlFor="timerSeconds">Timer (s)</Label>
               <Input id="timerSeconds" name="timerSeconds" type="number" min={10} max={300} defaultValue={30} required />
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="antiSnipeSeconds">Anti-snipe extension (s)</Label>
-            <Input id="antiSnipeSeconds" name="antiSnipeSeconds" type="number" min={5} max={120} defaultValue={20} required />
-            <p className="text-xs text-muted-foreground">
-              A bid in the final seconds bumps the clock back up to this many seconds.
-            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -107,7 +113,23 @@ export function CreateRoomDialog() {
             </div>
           </div>
 
-          <TiersEditor />
+          {/* Native <details> keeps children mounted while collapsed, so these fields still submit. */}
+          <details className="group rounded-lg border bg-muted/30">
+            <summary className="flex cursor-pointer list-none items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium select-none hover:bg-muted/50">
+              Advanced settings
+              <ChevronDown className="size-4 text-muted-foreground transition-transform group-open:rotate-180" />
+            </summary>
+            <div className="space-y-4 border-t p-3">
+              <div className="space-y-2">
+                <Label htmlFor="antiSnipeSeconds">Anti-snipe extension (s)</Label>
+                <Input id="antiSnipeSeconds" name="antiSnipeSeconds" type="number" min={5} max={120} defaultValue={20} required />
+                <p className="text-xs text-muted-foreground">
+                  A bid in the final seconds bumps the clock back up to this many seconds.
+                </p>
+              </div>
+              <TiersEditor />
+            </div>
+          </details>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-2">
@@ -148,7 +170,7 @@ export function CreateRoomDialog() {
             </p>
           )}
 
-          <DialogFooter>
+          <DialogFooter className="sticky bottom-0 z-10 border-t bg-card/80 backdrop-blur supports-backdrop-filter:bg-card/60">
             <SubmitButton />
           </DialogFooter>
         </form>

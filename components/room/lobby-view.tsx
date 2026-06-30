@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Play, Plus, Users } from "lucide-react";
+import { Check, Copy, Play, Plus, Users } from "lucide-react";
 import type { Item, Participant, Room } from "@/lib/types";
 import { formatAmount } from "@/lib/format";
 import { joinRoom, startAuction } from "@/lib/auction";
@@ -10,6 +10,17 @@ import { createClient } from "@/lib/supabase/client";
 import { CsvImportDialog, type ImportedPlayer } from "@/components/csv-import-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+
+// Role-colored accent (matches item.role, case-insensitive): bat→violet, bowl/all→emerald,
+// keep/wk→amber, else neutral. Used for the left border on each queued-player row.
+function roleBorder(role: string | null): string {
+  const r = (role ?? "").toLowerCase();
+  if (r.startsWith("bat")) return "border-l-primary";
+  if (r.startsWith("bowl") || r.startsWith("all")) return "border-l-emerald-500";
+  if (r.startsWith("keep") || r.startsWith("wk") || r.includes("keeper")) return "border-l-amber-500";
+  return "border-l-border";
+}
 
 export function LobbyView({
   room,
@@ -26,7 +37,15 @@ export function LobbyView({
 }) {
   const [pending, setPending] = useState(false);
   const [teamName, setTeamName] = useState("");
+  const [copied, setCopied] = useState(false);
   const [newPlayer, setNewPlayer] = useState({ name: "", role: "", country: "", base_price: "" });
+
+  const copyCode = async () => {
+    await navigator.clipboard.writeText(room.code);
+    toast.success("Room code copied");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
 
   const start = async () => {
     setPending(true);
@@ -103,7 +122,18 @@ export function LobbyView({
       <div className="space-y-6">
         <div className="rounded-xl border bg-card p-6 text-center">
           <p className="text-sm text-muted-foreground">Share this code so teams can join</p>
-          <p className="mt-2 font-mono text-4xl font-bold tracking-[0.3em]">{room.code}</p>
+          <div className="mt-2 flex items-center justify-center gap-3">
+            <p className="font-mono text-4xl font-bold tracking-[0.3em] text-primary">{room.code}</p>
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Copy room code"
+              onClick={copyCode}
+              className="shrink-0"
+            >
+              {copied ? <Check className="size-4 text-emerald-500" /> : <Copy className="size-4" />}
+            </Button>
+          </div>
         </div>
 
         <div className="rounded-xl border bg-card">
@@ -115,7 +145,13 @@ export function LobbyView({
           ) : (
             <ul className="max-h-80 divide-y overflow-y-auto">
               {items.map((it, i) => (
-                <li key={it.id} className="flex items-center justify-between px-4 py-2.5 text-sm">
+                <li
+                  key={it.id}
+                  className={cn(
+                    "flex items-center justify-between border-l-2 px-4 py-2.5 text-sm",
+                    roleBorder(it.role),
+                  )}
+                >
                   <span>
                     <span className="mr-2 text-muted-foreground">{i + 1}.</span>
                     {it.name}
@@ -189,13 +225,26 @@ export function LobbyView({
         </div>
 
         {isAdmin ? (
-          <div className="rounded-xl border bg-card p-4">
-            <Button className="w-full" size="lg" disabled={pending || items.length === 0} onClick={start}>
+          <div className="space-y-3 rounded-xl border bg-card p-4">
+            <p className="text-center text-xs text-muted-foreground">
+              {items.length === 0 ? (
+                <>Add players to begin.</>
+              ) : (
+                <>
+                  <span className="font-medium text-foreground">{participants.length}</span> teams ·{" "}
+                  <span className="font-medium text-foreground">{items.length}</span> players ·{" "}
+                  <span className="text-emerald-500">ready</span>
+                </>
+              )}
+            </p>
+            <Button
+              size="lg"
+              disabled={pending || items.length === 0}
+              onClick={start}
+              className="w-full shadow-lg shadow-primary/30 ring-1 ring-primary/40 transition-shadow hover:shadow-xl hover:shadow-primary/40"
+            >
               <Play className="size-5" /> Start auction
             </Button>
-            {items.length === 0 && (
-              <p className="mt-2 text-center text-xs text-muted-foreground">Add players before starting.</p>
-            )}
           </div>
         ) : myParticipant ? (
           <div className="rounded-xl border bg-card p-4 text-center text-sm">
