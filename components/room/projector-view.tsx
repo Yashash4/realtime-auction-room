@@ -10,6 +10,7 @@ import { formatMoney } from "@/lib/format";
 import { TimerRing } from "@/components/room/timer-ring";
 import { BidHistory } from "@/components/room/bid-history";
 import { CommentaryFeed } from "@/components/room/commentary-feed";
+import { ReactionsLayer } from "@/components/room/reactions-layer";
 
 function initials(name: string) {
   return name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
@@ -151,6 +152,8 @@ export function ProjectorView({
           <CommentaryFeed />
         </aside>
       </main>
+
+      <ReactionsLayer roomId={room.id} />
     </div>
   );
 }

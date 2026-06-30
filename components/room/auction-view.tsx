@@ -13,6 +13,7 @@ import { BidHistory } from "@/components/room/bid-history";
 import { TeamBudgets } from "@/components/room/team-budgets";
 import { AdminControls } from "@/components/room/admin-controls";
 import { CommentaryFeed } from "@/components/room/commentary-feed";
+import { ReactionsLayer } from "@/components/room/reactions-layer";
 
 export function AuctionView({
   room,
@@ -160,6 +161,8 @@ export function AuctionView({
         />
         <CommentaryFeed />
       </div>
+
+      <ReactionsLayer roomId={room.id} />
     </div>
   );
 }
