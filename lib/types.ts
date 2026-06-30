@@ -64,6 +64,25 @@ export type Bid = {
   created_at: string;
 };
 
+export type AuctionEventType =
+  | "auction_started"
+  | "bid_placed"
+  | "timer_extended"
+  | "sold"
+  | "unsold";
+
+/** Append-only log row (see supabase/migrations/0007). For replay + analytics. */
+export type AuctionEvent = {
+  id: number;
+  room_id: string;
+  item_id: string | null;
+  participant_id: string | null;
+  type: AuctionEventType;
+  amount: number | null;
+  data: Record<string, unknown>;
+  created_at: string;
+};
+
 /** Pick the bid increment for a current price (mirrors SQL tier_step). */
 export function tierStep(tiers: IncrementTier[], price: number): number {
   const applicable = tiers
