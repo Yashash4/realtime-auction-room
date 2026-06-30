@@ -39,6 +39,12 @@ export function AuctionRoom({
   // Pre-existing resolved items (e.g. reopening a finished room) are not celebrated.
   const celebrated = useRef<Set<string> | null>(null);
   const [soldEvent, setSoldEvent] = useState<SoldEvent | null>(null);
+  // A new round reopens already-resolved players; re-arm so their re-sales celebrate.
+  const prevRound = useRef(room.round);
+  useEffect(() => {
+    if (room.round > prevRound.current) celebrated.current = null;
+    prevRound.current = room.round;
+  }, [room.round]);
   useEffect(() => {
     const resolved = items.filter((i) => i.status === "sold" || i.status === "unsold");
     if (celebrated.current === null) {
@@ -155,7 +161,7 @@ export function AuctionRoom({
             myParticipant={myParticipant}
           />
         ) : room.status === "completed" ? (
-          <CompletedView room={room} items={items} participants={participants} />
+          <CompletedView room={room} items={items} participants={participants} isAdmin={isAdmin} />
         ) : (
           <AuctionView
             room={room}

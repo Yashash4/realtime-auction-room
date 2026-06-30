@@ -1,22 +1,38 @@
 "use client";
 
-import { Download, Trophy } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+import { Download, RotateCcw, Trophy } from "lucide-react";
 import type { Item, Participant, Room } from "@/lib/types";
 import { formatMoney } from "@/lib/format";
+import { startUnsoldRound } from "@/lib/auction";
 import { Button } from "@/components/ui/button";
 
 export function CompletedView({
   room,
   items,
   participants,
+  isAdmin,
 }: {
   room: Room;
   items: Item[];
   participants: Participant[];
+  isAdmin: boolean;
 }) {
   const teamById = new Map(participants.map((p) => [p.id, p]));
   const sold = items.filter((i) => i.status === "sold");
   const unsold = items.filter((i) => i.status === "unsold");
+
+  const [reauctioning, setReauctioning] = useState(false);
+  const reauction = async () => {
+    setReauctioning(true);
+    try {
+      await startUnsoldRound(room.id);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't start the round");
+      setReauctioning(false); // success transitions the room out of this view via realtime
+    }
+  };
 
   const squads = participants
     .map((p) => {
@@ -33,17 +49,26 @@ export function CompletedView({
           <Trophy className="size-6" />
         </div>
         <h2 className="text-2xl font-bold">Auction complete</h2>
+        {room.round > 1 && (
+          <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+            After Round {room.round}
+          </span>
+        )}
         <p className="text-sm text-muted-foreground">
           {sold.length} sold · {unsold.length} unsold
         </p>
-        <Button
-          variant="outline"
-          className="mt-2"
-          render={<a href={`/api/rooms/${room.code}/results`} />}
-        >
-          <Download />
-          Download CSV
-        </Button>
+        <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
+          <Button variant="outline" render={<a href={`/api/rooms/${room.code}/results`} />}>
+            <Download />
+            Download CSV
+          </Button>
+          {isAdmin && unsold.length > 0 && (
+            <Button disabled={reauctioning} onClick={reauction}>
+              <RotateCcw />
+              Re-auction unsold (Round {room.round + 1})
+            </Button>
+          )}
+        </div>
       </div>
 
       <section className="space-y-3">

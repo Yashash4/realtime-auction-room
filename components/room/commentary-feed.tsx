@@ -14,6 +14,7 @@ import {
   Hourglass,
   Megaphone,
   Mic,
+  RotateCcw,
   Swords,
   Timer,
   Trophy,
@@ -44,6 +45,7 @@ const ICON: Record<BeatCategory, LucideIcon> = {
   milestone_crore: Gem,
   lull: Hourglass,
   spree: Flame,
+  round_started: RotateCcw,
 };
 
 /** Live text feed mirroring the spoken commentary; the spoken line is highlighted. */

@@ -54,7 +54,10 @@ export function ProjectorView({
       <header className="flex items-center justify-between border-b px-6 py-3 xl:px-8 xl:py-4">
         <div className="min-w-0">
           <h1 className="truncate text-xl font-semibold leading-tight xl:text-2xl">{room.name}</h1>
-          <p className="font-mono text-xs tracking-widest text-muted-foreground xl:text-sm">{room.code}</p>
+          <p className="font-mono text-xs tracking-widest text-muted-foreground xl:text-sm">
+            {room.code}
+            {room.round > 1 && <span className="ml-2 text-primary">· Round {room.round}</span>}
+          </p>
         </div>
         <div className="flex items-center gap-4 xl:gap-5">
           <span className="flex items-center gap-2 text-sm text-muted-foreground">

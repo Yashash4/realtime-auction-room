@@ -101,6 +101,11 @@ export function AuctionView({
     <div className="mx-auto grid max-w-5xl gap-6 lg:grid-cols-[1fr_320px]">
       <div className="space-y-6">
         <div className="flex flex-col items-center gap-6 rounded-xl border bg-card p-8">
+          {room.round > 1 && (
+            <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+              Round {room.round} · unsold players
+            </span>
+          )}
           {paused && (
             <span className="rounded-full bg-amber-500/15 px-3 py-1 text-xs font-medium text-amber-600 dark:text-amber-400">
               Paused by admin
