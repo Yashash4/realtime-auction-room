@@ -35,15 +35,6 @@ export function AuctionRoom({
         .sort((a, b) => b.amount - a.amount || b.created_at.localeCompare(a.created_at))
     : [];
 
-  // SOLD players won per team — drives the squad-cap display + bid lockout.
-  const soldByTeam = new Map<string, number>();
-  for (const it of items) {
-    if (it.status === "sold" && it.sold_to) soldByTeam.set(it.sold_to, (soldByTeam.get(it.sold_to) ?? 0) + 1);
-  }
-
-  // Position of the player on the block, for the "Player N of M" progress line.
-  const itemProgress = { index: items.findIndex((i) => i.id === room.current_item_id), total: items.length };
-
   // Detect a player resolving (sold/unsold) and fire the celebratory overlay.
   // Pre-existing resolved items (e.g. reopening a finished room) are not celebrated.
   const celebrated = useRef<Set<string> | null>(null);
@@ -160,8 +151,8 @@ export function AuctionRoom({
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
-        {room.status === "lobby" ? (
+      {room.status === "lobby" ? (
+        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
           <LobbyView
             room={room}
             items={items}
@@ -169,22 +160,26 @@ export function AuctionRoom({
             isAdmin={isAdmin}
             myParticipant={myParticipant}
           />
-        ) : room.status === "completed" ? (
+        </main>
+      ) : room.status === "completed" ? (
+        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
           <CompletedView room={room} items={items} participants={participants} isAdmin={isAdmin} />
-        ) : (
+        </main>
+      ) : (
+        // Live auction: the AuctionView owns a single, non-scrolling viewport.
+        <main className="w-full flex-1 overflow-hidden">
           <AuctionView
             room={room}
+            items={items}
             currentItem={currentItem}
             itemBids={itemBids}
             participants={participants}
             isAdmin={isAdmin}
             myParticipant={myParticipant}
-            soldByTeam={soldByTeam}
-            itemProgress={itemProgress}
             nowMs={nowMs}
           />
-        )}
-      </main>
+        </main>
+      )}
 
       <SoldOverlay event={soldEvent} onDone={clearSold} />
     </div>

@@ -98,11 +98,14 @@ export function useAuctionRoom(initial: Initial, userId: string): AuctionState {
     const channel = supabase.channel(`room:${roomId}`, {
       config: { presence: { key: userId } },
     });
+    // presenceState is keyed by user id -> distinct watchers (multiple tabs = one).
+    const recount = () => setWatching(Object.keys(channel.presenceState()).length || 1);
     channel
-      .on("presence", { event: "sync" }, () => {
-        // presenceState is keyed by user id -> distinct watchers (multiple tabs = one).
-        setWatching(Object.keys(channel.presenceState()).length || 1);
-      })
+      // sync is the periodic snapshot; join/leave fire IMMEDIATELY on a change, so
+      // the count updates the instant someone enters or leaves the room.
+      .on("presence", { event: "sync" }, recount)
+      .on("presence", { event: "join" }, recount)
+      .on("presence", { event: "leave" }, recount)
       .on("postgres_changes", { event: "*", schema: "public", table: "rooms", filter: `id=eq.${roomId}` }, (p) => {
         if (p.new && Object.keys(p.new).length) setRoom(p.new as Room);
       })
