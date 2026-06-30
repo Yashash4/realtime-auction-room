@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, Users } from "lucide-react";
 import type { RoomStatus } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
+import { DeleteRoomButton } from "@/components/dashboard/delete-room-button";
 
 const STATUS_STYLES: Record<RoomStatus, string> = {
   lobby: "bg-blue-500/15 text-blue-600 dark:text-blue-400",
@@ -20,10 +21,10 @@ export type RoomCardData = {
 
 export function RoomCard({ room }: { room: RoomCardData }) {
   return (
-    <Link
-      href={`/rooms/${room.code}`}
-      className="group flex flex-col rounded-xl border bg-card p-5 transition-colors hover:border-foreground/20 hover:bg-accent/40"
-    >
+    <div className="group relative flex flex-col rounded-xl border bg-card p-5 transition-colors hover:border-foreground/20 hover:bg-accent/40">
+      {/* Stretched link: the whole card is clickable, but sibling controls with
+          relative z-10 (the delete button) sit above it and stay interactive. */}
+      <Link href={`/rooms/${room.code}`} aria-label={`Open ${room.name}`} className="absolute inset-0 rounded-xl" />
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="truncate font-medium">{room.name}</h3>
@@ -38,8 +39,11 @@ export function RoomCard({ room }: { room: RoomCardData }) {
           <Users className="size-4" />
           {room.itemCount} {room.itemCount === 1 ? "player" : "players"} · {room.role}
         </span>
-        <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+        <div className="flex items-center gap-1">
+          {room.role === "Host" && <DeleteRoomButton code={room.code} name={room.name} />}
+          <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+        </div>
       </div>
-    </Link>
+    </div>
   );
 }
