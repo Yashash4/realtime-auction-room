@@ -38,8 +38,9 @@ export function ReactionsLayer({ roomId }: { roomId: string }) {
         ))}
       </div>
 
-      {/* Reaction bar — the only interactive part */}
-      <div className="pointer-events-auto fixed bottom-5 left-1/2 z-50 flex -translate-x-1/2 gap-1 rounded-full border bg-card px-2 py-1 shadow-lg">
+      {/* Reaction bar — docked bottom-right so it never overlaps the centered
+          bid button / inputs (it used to sit bottom-center, on top of them). */}
+      <div className="pointer-events-auto fixed bottom-5 right-5 z-50 flex gap-1 rounded-full border bg-card px-2 py-1 shadow-lg">
         {EMOJIS.map((emoji) => (
           <button
             key={emoji}
