@@ -55,7 +55,7 @@ Beyond the brief:
 - **Per-room currency label** — a display-only label (`₹`, `$`); all amounts stored as raw integers
 - **Team budgets** — enforced server-side; a bid can't exceed remaining budget
 - **Public demo rooms** — visible to every logged-in user
-- **Projector / broadcast mode** — a read-only big-screen view at `/rooms/[code]/projector` for a TV or stream (huge player card, bid, timer, purses + live commentary), in sync via the same realtime data
+- **Live Now + watch view** — the dashboard lists every in-progress auction (host, current player, live "X watching" count) to all logged-in users; anyone can open a room's read-only watch / cast view at `/rooms/[code]/projector` (huge player card, bid, timer, purses, bid history + commentary) — the same view doubles as the big-screen/projector cast. Active rooms are watchable by non-members; joining as a team still only works in the lobby.
 
 ## Architecture
 

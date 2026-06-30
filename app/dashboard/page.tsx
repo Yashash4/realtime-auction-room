@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { CreateRoomDialog } from "@/components/dashboard/create-room-dialog";
 import { JoinRoomForm } from "@/components/dashboard/join-room-form";
 import { RoomCard, type RoomCardData } from "@/components/dashboard/room-card";
+import { LiveNow, type LiveRoom } from "@/components/dashboard/live-now";
 import type { Room } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -24,15 +25,33 @@ export default async function DashboardPage() {
   // and rooms.current_item_id), so PostgREST needs the explicit FK to count players.
   const select = "id, code, name, status, admin_id, is_demo, items!items_room_id_fkey(count)";
 
-  // Rooms I host, rooms I joined as a team, and the public demo rooms.
-  const [{ data: hosted }, { data: memberships }, { data: demos }] = await Promise.all([
+  // Rooms I host, rooms I joined, the public demos, and every in-progress room.
+  const [{ data: hosted }, { data: memberships }, { data: demos }, { data: active }] = await Promise.all([
     supabase.from("rooms").select(select).eq("admin_id", user.id).order("created_at", { ascending: false }),
     supabase
       .from("room_participants")
       .select(`rooms(${select})`)
       .eq("user_id", user.id),
     supabase.from("rooms").select(select).eq("is_demo", true).order("created_at", { ascending: false }),
+    supabase
+      .from("rooms")
+      .select("id, code, name, admin_id, currentItem:items!rooms_current_item_fk(name)")
+      .in("status", ["active", "paused"])
+      .order("created_at", { ascending: false }),
   ]);
+
+  // "Live now" list (host names need a separate lookup — no rooms→profiles FK).
+  type ActiveRow = { id: string; code: string; name: string; admin_id: string; currentItem: { name: string } | { name: string }[] | null };
+  const activeRows = (active ?? []) as ActiveRow[];
+  const liveAdminIds = [...new Set(activeRows.map((r) => r.admin_id))];
+  const { data: liveHosts } = liveAdminIds.length
+    ? await supabase.from("profiles").select("id, display_name").in("id", liveAdminIds)
+    : { data: [] as { id: string; display_name: string }[] };
+  const liveHostBy = new Map((liveHosts ?? []).map((p) => [p.id, p.display_name]));
+  const liveInitial: LiveRoom[] = activeRows.map((r) => {
+    const ci = Array.isArray(r.currentItem) ? r.currentItem[0] : r.currentItem;
+    return { id: r.id, code: r.code, name: r.name, host: liveHostBy.get(r.admin_id) ?? "Host", currentPlayer: ci?.name ?? null };
+  });
 
   const joined = (memberships ?? [])
     .flatMap((m) => (m as unknown as { rooms: RoomWithCount | null }).rooms ?? [])
@@ -68,6 +87,8 @@ export default async function DashboardPage() {
         <h2 className="text-sm font-medium text-muted-foreground">Join a room</h2>
         <JoinRoomForm />
       </section>
+
+      <LiveNow initial={liveInitial} />
 
       <section className="space-y-4">
         <h2 className="font-medium">Your rooms</h2>

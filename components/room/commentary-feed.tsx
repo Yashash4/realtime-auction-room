@@ -64,20 +64,20 @@ export function CommentaryFeed() {
         <Mic className="size-4 text-primary" /> Commentary
       </div>
       {lines.length === 0 ? (
-        <p className="px-4 py-6 text-center text-sm text-muted-foreground">The auctioneer is warming up…</p>
+        <p className="px-4 py-6 text-center text-base text-muted-foreground">The auctioneer is warming up…</p>
       ) : (
-        <ul className="max-h-64 space-y-1 overflow-y-auto px-2 py-2">
+        <ul className="max-h-72 space-y-1 overflow-y-auto px-2 py-2 xl:max-h-96">
           {lines.map((l) => {
             const Icon = ICON[l.category] ?? Mic;
             const live = l.id === speakingId;
             return (
               <li
                 key={l.id}
-                className={`flex items-start gap-2 rounded-md px-2 py-1.5 text-sm duration-200 animate-in fade-in ${
+                className={`flex items-start gap-2 rounded-md px-2 py-1.5 text-base duration-200 animate-in fade-in xl:text-lg ${
                   live ? "bg-primary/10 font-medium text-foreground" : "text-muted-foreground"
                 }`}
               >
-                <Icon className={`mt-0.5 size-3.5 shrink-0 ${live ? "text-primary" : ""}`} />
+                <Icon className={`mt-0.5 size-4 shrink-0 xl:size-5 ${live ? "text-primary" : ""}`} />
                 <span>{l.text}</span>
               </li>
             );

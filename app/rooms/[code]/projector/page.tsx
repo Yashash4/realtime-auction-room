@@ -16,7 +16,12 @@ export default async function ProjectorPage({ params }: { params: Promise<{ code
         <div className="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
           <SearchX className="size-6" />
         </div>
-        <h1 className="text-lg font-semibold">Room not available</h1>
+        <div>
+          <h1 className="text-lg font-semibold">Not available to watch</h1>
+          <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+            This auction isn&apos;t live, or it&apos;s private and you&apos;re not a member.
+          </p>
+        </div>
         <Button render={<Link href="/dashboard" />}>Back to dashboard</Button>
       </main>
     );

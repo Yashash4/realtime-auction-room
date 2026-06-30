@@ -98,8 +98,8 @@ export function AuctionRoom({
               variant="ghost"
               size="icon-sm"
               render={<Link href={`/rooms/${room.code}/projector`} target="_blank" />}
-              aria-label="Open projector mode"
-              title="Projector / broadcast mode"
+              aria-label="Open watch / cast view"
+              title="Cast / projector — big-screen watch view"
             >
               <Tv className="size-4" />
             </Button>
