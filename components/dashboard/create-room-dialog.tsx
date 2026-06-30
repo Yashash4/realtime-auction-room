@@ -2,9 +2,11 @@
 
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
+import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import { createRoom, type CreateRoomState } from "@/app/dashboard/actions";
 import { SAMPLE_PLAYERS_TEXT } from "@/lib/players";
+import { CsvImportDialog } from "@/components/csv-import-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -33,6 +35,7 @@ function SubmitButton() {
 
 export function CreateRoomDialog() {
   const [open, setOpen] = useState(false);
+  const [playersText, setPlayersText] = useState(SAMPLE_PLAYERS_TEXT);
   const [state, formAction] = useActionState<CreateRoomState, FormData>(createRoom, {});
 
   return (
@@ -86,14 +89,32 @@ export function CreateRoomDialog() {
           <TiersEditor />
 
           <div className="space-y-2">
-            <Label htmlFor="players">Players</Label>
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor="players">Players</Label>
+              <CsvImportDialog
+                onImport={(players) => {
+                  setPlayersText((prev) =>
+                    [
+                      prev.trimEnd(),
+                      ...players.map(
+                        (p) => `${p.name}, ${p.role ?? ""}, ${p.country ?? ""}, ${p.base_price}`,
+                      ),
+                    ]
+                      .filter(Boolean)
+                      .join("\n"),
+                  );
+                  toast.success(`Added ${players.length} players`);
+                }}
+              />
+            </div>
             <p className="text-xs text-muted-foreground">
               One per line: <span className="font-mono">Name, Role, Country, BasePrice</span>
             </p>
             <textarea
               id="players"
               name="players"
-              defaultValue={SAMPLE_PLAYERS_TEXT}
+              value={playersText}
+              onChange={(e) => setPlayersText(e.target.value)}
               rows={8}
               className={`${inputClass} font-mono text-xs`}
               required

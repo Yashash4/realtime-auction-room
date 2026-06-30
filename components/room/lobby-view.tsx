@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Play, Users } from "lucide-react";
+import { Play, Plus, Users } from "lucide-react";
 import type { Item, Participant, Room } from "@/lib/types";
 import { formatMoney } from "@/lib/format";
 import { joinRoom, startAuction } from "@/lib/auction";
+import { createClient } from "@/lib/supabase/client";
+import { CsvImportDialog, type ImportedPlayer } from "@/components/csv-import-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -24,6 +26,7 @@ export function LobbyView({
 }) {
   const [pending, setPending] = useState(false);
   const [teamName, setTeamName] = useState("");
+  const [newPlayer, setNewPlayer] = useState({ name: "", role: "", country: "", base_price: "" });
 
   const start = async () => {
     setPending(true);
@@ -45,6 +48,54 @@ export function LobbyView({
     } finally {
       setPending(false);
     }
+  };
+
+  // Shared insert for both manual add and CSV import. Realtime hook refreshes the list.
+  const addPlayers = async (players: ImportedPlayer[]) => {
+    if (players.length === 0) return false;
+    const startIdx = Math.max(-1, ...items.map((i) => i.order_index)) + 1;
+    const supabase = createClient();
+    const { error } = await supabase.from("items").insert(
+      players.map((p, i) => ({
+        room_id: room.id,
+        name: p.name,
+        role: p.role,
+        country: p.country,
+        base_price: p.base_price,
+        order_index: startIdx + i,
+        status: "pending" as const,
+      })),
+    );
+    if (error) {
+      toast.error(error.message);
+      return false;
+    }
+    return true;
+  };
+
+  const addManual = async () => {
+    const name = newPlayer.name.trim();
+    const base_price = Number(newPlayer.base_price.replace(/,/g, "").trim());
+    if (!name) return toast.error("Enter a player name");
+    if (Number.isNaN(base_price) || base_price < 0) return toast.error("Enter a valid base price");
+    setPending(true);
+    const ok = await addPlayers([
+      {
+        name,
+        role: newPlayer.role.trim() || null,
+        country: newPlayer.country.trim() || null,
+        base_price,
+      },
+    ]);
+    setPending(false);
+    if (ok) {
+      toast.success(`Added ${name}`);
+      setNewPlayer({ name: "", role: "", country: "", base_price: "" });
+    }
+  };
+
+  const importPlayers = async (players: ImportedPlayer[]) => {
+    if (await addPlayers(players)) toast.success(`Added ${players.length} players`);
   };
 
   return (
@@ -78,6 +129,42 @@ export function LobbyView({
             </ul>
           )}
         </div>
+
+        {isAdmin && (
+          <div className="space-y-4 rounded-xl border bg-card p-4">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm font-medium">Add players</p>
+              <CsvImportDialog onImport={importPlayers} />
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Input
+                placeholder="Name"
+                value={newPlayer.name}
+                onChange={(e) => setNewPlayer((p) => ({ ...p, name: e.target.value }))}
+              />
+              <Input
+                placeholder="Role"
+                value={newPlayer.role}
+                onChange={(e) => setNewPlayer((p) => ({ ...p, role: e.target.value }))}
+              />
+              <Input
+                placeholder="Country"
+                value={newPlayer.country}
+                onChange={(e) => setNewPlayer((p) => ({ ...p, country: e.target.value }))}
+              />
+              <Input
+                type="number"
+                min={0}
+                placeholder="Base price"
+                value={newPlayer.base_price}
+                onChange={(e) => setNewPlayer((p) => ({ ...p, base_price: e.target.value }))}
+              />
+            </div>
+            <Button className="w-full gap-2" disabled={pending} onClick={addManual}>
+              <Plus className="size-4" /> Add player
+            </Button>
+          </div>
+        )}
       </div>
 
       <div className="space-y-6">
