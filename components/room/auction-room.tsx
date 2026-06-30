@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Copy, Eye, Megaphone, MegaphoneOff, Radio, Volume2, VolumeX } from "lucide-react";
+import { ArrowLeft, Copy, Eye, Megaphone, MegaphoneOff, Radio, Tv, Volume2, VolumeX } from "lucide-react";
 import { useAuctionRoom } from "@/lib/hooks/use-auction-room";
 import { useAuctioneer } from "@/lib/hooks/use-auctioneer";
 import { useMuted } from "@/lib/sound";
@@ -94,6 +94,15 @@ export function AuctionRoom({
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              render={<Link href={`/rooms/${room.code}/projector`} target="_blank" />}
+              aria-label="Open projector mode"
+              title="Projector / broadcast mode"
+            >
+              <Tv className="size-4" />
+            </Button>
             {isAdmin && (
               <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">Admin</span>
             )}

@@ -55,6 +55,7 @@ Beyond the brief:
 - **Per-room currency label** — a display-only label (`₹`, `$`); all amounts stored as raw integers
 - **Team budgets** — enforced server-side; a bid can't exceed remaining budget
 - **Public demo rooms** — visible to every logged-in user
+- **Projector / broadcast mode** — a read-only big-screen view at `/rooms/[code]/projector` for a TV or stream (huge player card, bid, timer, purses + live commentary), in sync via the same realtime data
 
 ## Architecture
 

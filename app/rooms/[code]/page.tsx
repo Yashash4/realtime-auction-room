@@ -1,8 +1,6 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { SearchX } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
-import type { Bid, Item, Participant, Room } from "@/lib/types";
+import { loadRoom } from "@/lib/room-data";
 import { Button } from "@/components/ui/button";
 import { AuctionRoom } from "@/components/room/auction-room";
 
@@ -10,37 +8,14 @@ export const dynamic = "force-dynamic";
 
 export default async function RoomPage({ params }: { params: Promise<{ code: string }> }) {
   const { code } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-
-  // RLS only returns the room if it's a demo, or the user is its admin/participant.
-  const { data: room } = await supabase
-    .from("rooms")
-    .select("*")
-    .eq("code", code.toUpperCase())
-    .maybeSingle();
-
-  if (!room) return <RoomNotFound />;
-
-  const [{ data: items }, { data: participants }, { data: bids }] = await Promise.all([
-    supabase.from("items").select("*").eq("room_id", room.id).order("order_index"),
-    supabase.from("room_participants").select("*").eq("room_id", room.id),
-    supabase.from("bids").select("*").eq("room_id", room.id).order("created_at"),
-  ]);
+  const data = await loadRoom(code);
+  if (!data) return <RoomNotFound />;
 
   return (
     <AuctionRoom
-      initial={{
-        room: room as Room,
-        items: (items ?? []) as Item[],
-        participants: (participants ?? []) as Participant[],
-        bids: (bids ?? []) as Bid[],
-      }}
-      userId={user.id}
-      isAdmin={(room as Room).admin_id === user.id}
+      initial={{ room: data.room, items: data.items, participants: data.participants, bids: data.bids }}
+      userId={data.userId}
+      isAdmin={data.room.admin_id === data.userId}
     />
   );
 }
