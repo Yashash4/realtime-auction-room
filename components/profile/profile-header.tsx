@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Check, Mail, Pencil, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -20,6 +21,7 @@ export function ProfileHeader({
   email: string;
   memberSince: string;
 }) {
+  const router = useRouter();
   const [name, setName] = useState(initialName);
   const [draft, setDraft] = useState(initialName);
   const [editing, setEditing] = useState(false);
@@ -35,6 +37,7 @@ export function ProfileHeader({
     if (error) return toast.error(error.message);
     setName(next);
     setEditing(false);
+    router.refresh();
     toast.success("Name updated");
   };
 

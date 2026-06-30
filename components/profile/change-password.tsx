@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { KeyRound, Loader2 } from "lucide-react";
+import { Eye, EyeOff, KeyRound, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ export function ChangePassword() {
   const [confirm, setConfirm] = useState("");
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
+  const [show, setShow] = useState(false);
 
   const dirty = (fn: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setDone(false);
@@ -43,24 +44,37 @@ export function ChangePassword() {
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="newpw">New password</Label>
-          <Input
-            id="newpw"
-            type="password"
-            value={pw}
-            onChange={dirty(setPw)}
-            autoComplete="new-password"
-            placeholder="At least 8 characters"
-          />
+          <div className="relative">
+            <Input
+              id="newpw"
+              type={show ? "text" : "password"}
+              value={pw}
+              onChange={dirty(setPw)}
+              autoComplete="new-password"
+              placeholder="At least 8 characters"
+              minLength={8}
+              className="pr-10"
+            />
+            <button
+              type="button"
+              onClick={() => setShow((v) => !v)}
+              aria-label={show ? "Hide password" : "Show password"}
+              className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
+            >
+              {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+            </button>
+          </div>
         </div>
         <div className="space-y-2">
           <Label htmlFor="confirmpw">Confirm new password</Label>
           <Input
             id="confirmpw"
-            type="password"
+            type={show ? "text" : "password"}
             value={confirm}
             onChange={dirty(setConfirm)}
             autoComplete="new-password"
             placeholder="Re-enter password"
+            minLength={8}
           />
         </div>
       </div>

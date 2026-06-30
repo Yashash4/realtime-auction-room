@@ -5,11 +5,11 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 
-export type AuthState = { error?: string };
+export type AuthState = { error?: string; notice?: string };
 
 const credsSchema = z.object({
   email: z.string().email("Enter a valid email"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
 export async function login(
@@ -60,7 +60,7 @@ export async function register(
   // If email confirmation is enabled there is no session yet.
   if (!data.session) {
     return {
-      error:
+      notice:
         "Account created. Email confirmation is on for this project — confirm, then log in. (Disable it in Supabase Auth for instant demo access.)",
     };
   }
